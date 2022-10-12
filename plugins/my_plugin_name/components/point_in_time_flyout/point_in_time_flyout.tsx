@@ -41,164 +41,183 @@ import {
 import { IUiSettingsClient } from 'opensearch-dashboards/server';
 import { DataPublicPluginStart } from 'src/plugins/data/public';
 import { ManagementAppMountParams } from 'src/plugins/management/public';
-import { useOpenSearchDashboards } from '../../../../src/plugins/opensearch_dashboards_react/public';
+import { CoreStart, HttpFetchError } from 'opensearch-dashboards/public';
+import {CREATE_POINT_IN_TIME_PATH} from "../../common";
 
 export interface IndexPatternManagmentContext {
-  chrome: ChromeStart;
-  application: ApplicationStart;
-  savedObjects: SavedObjectsStart;
-  uiSettings: IUiSettingsClient;
-  notifications: NotificationsStart;
-  overlays: OverlayStart;
-  http: HttpSetup;
-  docLinks: DocLinksStart;
-  data: DataPublicPluginStart;
-  setBreadcrumbs: ManagementAppMountParams['setBreadcrumbs'];
-}
+    chrome: ChromeStart;
+    application: ApplicationStart;
+    savedObjects: SavedObjectsStart;
+    uiSettings: IUiSettingsClient;
+    notifications: NotificationsStart;
+    overlays: OverlayStart;
+    http: HttpSetup;
+    docLinks: DocLinksStart;
+    data: DataPublicPluginStart;
+    setBreadcrumbs: ManagementAppMountParams['setBreadcrumbs'];
+};
 
 export interface PointInTimeFlyoutItem {
-  id: string;
-  title: string;
-  sort: string;
-}
+    id: string;
+    title: string;
+    sort: string;
+};
 export interface SavedObjectReference {
-  name?: string;
-  id: string;
-  type: string;
+    name?: string;
+    id: string;
+    type: string;
 }
 export interface PointInTime {
-  name: string;
-  keepAlive: string;
-  id: string;
+    name: string,
+    keepAlive: string,
+    id: string
 }
 export async function getIndexPatterns(savedObjectsClient) {
-  return (
-    savedObjectsClient
-      .find({
-        type: 'index-pattern',
-        fields: ['title', 'type'],
-        perPage: 10000,
-      })
-      .then((response) =>
-        response.savedObjects
-          .map((pattern) => {
-            const id = pattern.id;
-            const title = pattern.get('title');
+    return (
+        savedObjectsClient
+            .find({
+                type: 'index-pattern',
+                fields: ['title', 'type'],
+                perPage: 10000,
+            })
+            .then((response) =>
+                response.savedObjects
+                    .map((pattern) => {
+                        const id = pattern.id;
+                        const title = pattern.get('title');
 
-            return {
-              id,
-              title,
-              // the prepending of 0 at the default pattern takes care of prioritization
-              // so the sorting will but the default index on top
-              // or on bottom of a the table
-              sort: `${title}`,
-            };
-          })
-          .sort((a, b) => {
-            if (a.sort < b.sort) {
-              return -1;
-            } else if (a.sort > b.sort) {
-              return 1;
-            } else {
-              return 0;
-            }
-          })
-      ) || []
-  );
+
+                        return {
+                            id,
+                            title,
+                            // the prepending of 0 at the default pattern takes care of prioritization
+                            // so the sorting will but the default index on top
+                            // or on bottom of a the table
+                            sort: `${title}`,
+                        };
+                    })
+                    .sort((a, b) => {
+                        if (a.sort < b.sort) {
+                            return -1;
+                        } else if (a.sort > b.sort) {
+                            return 1;
+                        } else {
+                            return 0;
+                        }
+                    })
+            ) || []
+    );
 }
 
 export async function findByTitle(client, title: string) {
-  if (title) {
-    const savedObjects = await client.find({
-      type: 'point-in-time',
-      perPage: 1000,
-      fields: ['id'],
-    });
+    if (title) {
+        const savedObjects = await client.find({
+            type: 'point-in-time',
+            perPage: 1000,
+            fields: ['id']
+        });
 
-    return savedObjects.savedObjects.find(
-      (obj) => obj.attributes.id.toLowerCase() === title.toLowerCase()
-    );
-  }
+        return savedObjects.savedObjects.find((obj) => obj.attributes.id.toLowerCase() === title.toLowerCase());
+    }
 }
 
 export async function createSavedObject(pointintime, client, reference) {
-  const dupe = await findByTitle(client, pointintime.id);
-  console.log(dupe);
-  // throw new Error(`Duplicate Point in time: ${pointintime.id}`);
-  // if (dupe) {
-  //     if (override) {
-  //         await this.delete(dupe.id);
-  //     } else {
-  //         throw new DuplicateIndexPatternError(`Duplicate index pattern: ${indexPattern.title}`);
-  //     }
-  // }
+    const dupe = await findByTitle(client, pointintime.id);
+    console.log(dupe);
+    if(dupe) {
+        throw new Error(`Duplicate Point in time: ${pointintime.id}`);
+    }
+    // if (dupe) {
+    //     if (override) {
+    //         await this.delete(dupe.id);
+    //     } else {
+    //         throw new DuplicateIndexPatternError(`Duplicate index pattern: ${indexPattern.title}`);
+    //     }
+    // }
 
-  const body = pointintime;
-  const references = [{ ...reference, name: 'index-pattern' }];
-  const savedObjectType = 'point-in-time';
-  const response = await client.create(savedObjectType, body, {
-    id: pointintime.id,
-    references,
-  });
-  console.log(response);
-  pointintime.id = response.id;
-  return pointintime;
+    const body = pointintime;
+    const references = [{...reference}];
+    const savedObjectType = "point-in-time";
+    const response = await client.create(savedObjectType, body, {
+        id: pointintime.id,
+        references,
+    });
+    console.log(response);
+    pointintime.id = response.id;
+    return pointintime;
 }
 
 export const PointInTimeFlyout = () => {
-  const [isFlyoutVisible, setIsFlyoutVisible] = useState(false);
-  const [showErrors, setShowErrors] = useState(false);
-  const [value, setValue] = useState('24');
-  const [checked, setChecked] = useState(false);
-  const onChange = (e) => {
-    setValue(e.target.value);
-  };
-  const [loading, setLoading] = useState(true);
 
-  const [indexPatterns, setIndexPatterns] = useState([] as PointInTimeFlyoutItem[]);
+    const [isFlyoutVisible, setIsFlyoutVisible] = useState(false);
+    const [showErrors, setShowErrors] = useState(false);
+    const [keepAlive, setKeepAlive] = useState('24');
+    const [checked, setChecked] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-  const {
-    setBreadcrumbs,
-    savedObjects,
-    uiSettings,
-    chrome,
-    docLinks,
-    application,
-    http,
-    data,
-  } = useOpenSearchDashboards<IndexPatternManagmentContext>().services;
+    const [indexPatterns, setIndexPatterns] = useState([] as PointInTimeFlyoutItem[]);
+    const[selectedIndexPattern, setSelectedIndexPattern] = useState("");
+    const[pitName, setPitName] = useState("");
 
-  console.log(useOpenSearchDashboards().services);
-  console.log(savedObjects);
-  useEffect(() => {
-    (async function () {
-      const gettedIndexPatterns: PointInTimeFlyoutItem[] = await getIndexPatterns(
-        savedObjects.client
-      );
-      const names = gettedIndexPatterns.map(function (item) {
-        return item.title;
-      });
-      setIndexPatterns(gettedIndexPatterns);
+    const {
+        setBreadcrumbs,
+        savedObjects,
+        uiSettings,
+        chrome,
+        docLinks,
+        application,
+        http,
+        data,
+    } = useOpenSearchDashboards<IndexPatternManagmentContext>().services;
 
-      console.log(gettedIndexPatterns);
-      setLoading(false);
-    })();
-  }, [savedObjects.client]);
-
-  const createPointInTime = () => {
-    // setIsFlyoutVisible(false);
-    const pit: PointInTime = {
-      name: 'testing',
-      keepAlive: '24',
-      id: "o463QQEKdGVzdF9pbmRleBZnSG5VR0dKWVJybW1QZzJRNzJ0YU1RABZBb2lZV2Y4clFBV1NQNnBjNUxCMHh3AAAAAAAAAAIOFkE1NXgtM3JLUjJxdExXc0lzd3lQQ2cBFmdIblVHR0pZUnJtbVBnMlE3MnRhTVEAAA==",
+    const onChange = (e) => {
+        setKeepAlive(e.target.value);
     };
-    const reference: SavedObjectReference = {
-      id: indexPatterns[0].id,
-      type: 'index-pattern',
-      name: indexPatterns[0].title,
-    };
-    createSavedObject(pit, savedObjects.client, reference);
-  };
+    const onDropDownChange = (e) => {
+        setSelectedIndexPattern(e.target.value);
+    }
+    console.log(useOpenSearchDashboards().services);
+    console.log(savedObjects);
+    useEffect(() => {
+        (async function () {
+            const gettedIndexPatterns: PointInTimeFlyoutItem[] = await getIndexPatterns(
+                savedObjects.client
+            );
+            var names = gettedIndexPatterns.map(function (item) {
+                return item['title'];
+            });
+            setIndexPatterns(gettedIndexPatterns);
+            setSelectedIndexPattern(gettedIndexPatterns[0].id);
+            console.log(gettedIndexPatterns);
+            setLoading(false);
+        })();
+    }, [
+        savedObjects.client,
+    ]);
+
+    const createPointInTime = async () => {
+      console.log('keep alive :' + keepAlive);
+      console.log("name : " + pitName);
+      console.log("index pattern : " + selectedIndexPattern);
+      const pattern = indexPatterns.find((r)=>r.id);
+
+      //setIsFlyoutVisible(false);
+      const index = pattern.title
+      const response = await http.post(`${CREATE_POINT_IN_TIME_PATH}/${index}`);
+      const pit:PointInTime = {
+            name: pitName,
+            keepAlive: keepAlive,
+            id: response.pit_id // Todo create pit and fill the pit id
+        }
+
+        const reference:SavedObjectReference = {
+            id: pattern.id,
+            type: 'index-pattern',
+            name: pattern.title
+        }
+        createSavedObject(pit, savedObjects.client,reference, http)
+    }
+
 
   // useEffect(() => {
   //     const gettedIndexPatterns: PointInTimeFlyoutItem[] = getIndexPatterns(
@@ -271,49 +290,62 @@ export const PointInTimeFlyout = () => {
     //     </EuiButton>
     // );
 
-    const onCheckboxChange = (e) => {
-      setChecked(e.target.checked);
-    };
-    let errors;
-    return (
-      <Fragment>
-        <EuiForm isInvalid={showErrors} error={errors} component="form">
-          <EuiFormRow isInvalid={showErrors} fullWidth>
-            <EuiText>
-              <p>Create point in time search based on existing index pattern</p>
-            </EuiText>
-          </EuiFormRow>
+        const onTextChange = (e) => {
+            setPitName(e.target.value);
+        }
+        const onCheckboxChange = (e) => {
+            setChecked(e.target.checked);
+        };
+        const onDropDownChange = (e) => {
+            setSelectedIndexPattern(e.target.value);
+        }
+        let errors;
+        return <Fragment>
+            <EuiForm isInvalid={showErrors} error={errors} component="form">
+                <EuiFormRow isInvalid={showErrors} fullWidth>
+                    <EuiText>
+                        <p>
+                            Create point in time search based on existing index pattern
+                        </p>
+                    </EuiText>
+                </EuiFormRow>
 
-          <EuiFormRow label="Data source" isInvalid={showErrors} fullWidth>
-            <EuiSelect
-              fullWidth
-              options={indexPatterns.map((option) => {
-                return {
-                  text: option.title,
-                  value: option.id,
-                };
-              })}
-              isInvalid={showErrors}
-              isLoading={loading}
-            />
-          </EuiFormRow>
-          <EuiFormRow label="Custom Point in time name" isInvalid={showErrors} fullWidth>
-            <EuiFieldText fullWidth name="name" isInvalid={showErrors} />
-          </EuiFormRow>
+                <EuiFormRow label="Data source" isInvalid={showErrors} fullWidth>
+                    <EuiSelect
+                        fullWidth
+                        options={(indexPatterns).map((option) => {
+                            return {
+                                text: option.title,
+                                value: option.id,
+                            };
+                        })}
+                        isInvalid={showErrors}
+                        isLoading={loading}
+                        value={selectedIndexPattern}
+                        onChange={onDropDownChange}
+                    />
+                </EuiFormRow>
+                <EuiFormRow label="Custom Point in time name" isInvalid={showErrors} fullWidth>
+                    <EuiFieldText fullWidth name="name" isInvalid={showErrors} onChange={onTextChange} />
+                </EuiFormRow>
 
-          <EuiFormRow label="Expiration in" isInvalid={showErrors} fullWidth>
-            <EuiRange
-              // min={100}
-              max={24}
-              step={0.05}
-              fullWidth
-              value={value}
-              onChange={onChange}
-              showLabels
-              showValue
-              aria-label="An example of EuiRange with showLabels prop"
-            />
-          </EuiFormRow>
+                <EuiFormRow
+                    label="Expiration in"
+                    isInvalid={showErrors}
+                    fullWidth
+                >
+                    <EuiRange
+                        // min={100}
+                        max={24}
+                        step={0.05}
+                        fullWidth
+                        value={keepAlive}
+                        onChange={onChange}
+                        showLabels
+                        showValue
+                        aria-label="An example of EuiRange with showLabels prop"
+                    />
+                </EuiFormRow>
 
           <EuiFormRow isInvalid={showErrors} fullWidth>
             <EuiCheckbox
@@ -389,3 +421,4 @@ export const PointInTimeFlyout = () => {
 function useGeneratedHtmlId(arg0: { prefix: string }) {
   throw new Error('Function not implemented.');
 }
+

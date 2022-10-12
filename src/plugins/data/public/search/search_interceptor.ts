@@ -116,11 +116,11 @@ export class SearchInterceptor {
     strategy?: string
   ): Observable<IOpenSearchDashboardsSearchResponse> {
     const { id, ...searchRequest } = request;
-    console.log("This is the search request : ", request);
     const path = trimEnd(
       `/internal/search/${strategy || OPENSEARCH_SEARCH_STRATEGY}/${id || ''}`,
       '/'
     );
+    console.log(request);
     // const pit_object = `{
     //   "pit": {
     //     "id": "o463QQErb3BlbnNlYXJjaF9kYXNoYm9hcmRzX3NhbXBsZV9kYXRhX2Vjb21tZXJjZRZiU3h5azg4dlEyeTBFSVFuUjdnTTlnABZBb2lZV2Y4clFBV1NQNnBjNUxCMHh3AAAAAAAAAAAfFkZxM2IweWVnU1VtX2JNejBsaEMxcXcBFmJTeHlrODh2UTJ5MEVJUW5SN2dNOWcAAA==",
@@ -133,7 +133,6 @@ export class SearchInterceptor {
     // searchRequest.params.ignore_unavailable;
     // // delete searchRequest.params.preference;
     const body = JSON.stringify(searchRequest);
-    console.log("body at interceptor is this: ", body)
     return from(
       this.deps.http.fetch({
         method: 'POST',
@@ -221,7 +220,7 @@ export class SearchInterceptor {
       if (options?.abortSignal?.aborted) {
         return throwError(new AbortError());
       }
-      console.log("This is the search interceptor in the search ")
+
       const { timeoutSignal, combinedSignal, cleanup } = this.setupAbortSignal({
         abortSignal: options?.abortSignal,
       });

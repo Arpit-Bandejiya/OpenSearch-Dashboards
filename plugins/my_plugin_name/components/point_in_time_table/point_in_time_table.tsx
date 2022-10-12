@@ -42,6 +42,7 @@ import {
     useOpenSearchDashboards,
 } from '../../../../src/plugins/opensearch_dashboards_react/public';
 import { PointInTimeFlyout } from '../point_in_time_flyout';
+import { IndexPatternManagmentContext } from '../point_in_time_flyout/point_in_time_flyout';
 
 
 const pagination = {
@@ -106,12 +107,73 @@ const item2: PointInTimeTableItem = {
     sort: '1pit2'
 };
 
+export async function getPits(savedObjects) {
+    return savedObjects
+    .find({
+        type: 'point-in-time',
+        perPage: 10000,
+    }).then((response) =>
+        response.savedObjects
+            .map((pattern) => {
+                console.log(pattern)
+                const id = pattern.id;
+                const name = pattern.get('name');
+
+
+                return {
+                    id,
+                    title: name,
+                    // the prepending of 0 at the default pattern takes care of prioritization
+                    // so the sorting will but the default index on top
+                    // or on bottom of a the table
+                    sort: `${name}`,
+                    default: false
+                };
+            })
+            .sort((a, b) => {
+                if (a.sort < b.sort) {
+                    return -1;
+                } else if (a.sort > b.sort) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            })
+    ) || [];
+}
 export const PointInTimeTable = ({ canSave, history }: Props) => {
 
     const [error, setError] = useState();
     const tableRef = useRef();
     const [pits, setPits] = useState([item1, item2]);
     const [selection, setSelection] = useState([]);
+    const {
+        setBreadcrumbs,
+        savedObjects,
+        uiSettings,
+        chrome,
+        docLinks,
+        application,
+        http,
+        data,
+    } = useOpenSearchDashboards<IndexPatternManagmentContext>().services;
+
+    useEffect(() => {
+        (async function () {
+            const pits1:PointInTimeTableItem[] = await getPits(savedObjects.client);
+            setPits(pits1);
+            var names = gettedIndexPatterns.map(function (item) {
+                return item['title'];
+            });
+            setIndexPatterns(gettedIndexPatterns);
+
+            console.log(gettedIndexPatterns);
+            setLoading(false);
+        })();
+    }, [
+        savedObjects.client,
+    ]);
+
     // const renderToolsLeft = () => {
     //     if (selection.length === 0) {
     //         return;

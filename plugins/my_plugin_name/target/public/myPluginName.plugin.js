@@ -685,15 +685,17 @@ __osdBundles__.define('plugin/myPluginName/public', __webpack_require__, /*requi
 /*!*************************!*\
   !*** ./common/index.ts ***!
   \*************************/
-/*! exports provided: PLUGIN_ID, PLUGIN_NAME */
+/*! exports provided: PLUGIN_ID, PLUGIN_NAME, CREATE_POINT_IN_TIME_PATH */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PLUGIN_ID", function() { return PLUGIN_ID; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PLUGIN_NAME", function() { return PLUGIN_NAME; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CREATE_POINT_IN_TIME_PATH", function() { return CREATE_POINT_IN_TIME_PATH; });
 const PLUGIN_ID = 'myPluginName';
 const PLUGIN_NAME = 'my_plugin_name';
+const CREATE_POINT_IN_TIME_PATH = '/api/create_point_in_time';
 
 /***/ }),
 

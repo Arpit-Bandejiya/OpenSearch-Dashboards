@@ -9,6 +9,7 @@ import {
 import { MyPluginNamePluginSetup, MyPluginNamePluginStart } from './types';
 import { defineRoutes } from './routes';
 import {pointInTime} from '../server/saved_objects/point_in_time';
+import {createPointInTimeRoute} from "./routes/create_point_in_time";
 
 export class MyPluginNamePlugin
   implements Plugin<MyPluginNamePluginSetup, MyPluginNamePluginStart> {
@@ -24,6 +25,7 @@ export class MyPluginNamePlugin
 
     // Register server side APIs
     defineRoutes(router);
+    createPointInTimeRoute(router, core.http);
     core.savedObjects.registerType(pointInTime);
 
     return {};

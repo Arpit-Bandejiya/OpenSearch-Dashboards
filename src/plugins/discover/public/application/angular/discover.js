@@ -77,7 +77,6 @@ const {
   toastNotifications,
   uiSettings: config,
   visualizations,
-  savedObjectsClient,
 } = getServices();
 
 import { getRootBreadcrumbs, getSavedSearchBreadcrumbs } from '../helpers/breadcrumbs';
@@ -242,7 +241,9 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
   let inspectorRequest;
   const savedSearch = $route.current.locals.savedObjects.savedSearch;
   $scope.searchSource = savedSearch.searchSource;
-  // console.log("This is the search store",$scope.searchSource);
+  debugger;
+  console.log("controller");
+  console.log(savedSearch.searchSource)
   $scope.indexPattern = resolveIndexPatternLoading();
   $scope.selectedPointInTime = $route.current.locals.savedObjects.pit.pitid || undefined;
   // console.log($scope.indexPattern);
@@ -287,6 +288,7 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
   filterManager.setAppFilters(_.cloneDeep(appStateContainer.getState().filters));
   debugger;
   data.query.queryString.setQuery(appStateContainer.getState().query);
+
   const stopSyncingQueryAppStateWithStateContainer = connectToQueryState(
     data.query,
     appStateContainer,
@@ -563,11 +565,15 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
   };
   $scope.topNavMenu = getTopNavLinks();
 
+  console.log("1: ");
+  console.log($scope.searchSource);
   $scope.searchSource
     .setField('index', $scope.indexPattern)
     .setField('highlightAll', true)
     .setField('version', true);
 
+  console.log("2 : ");
+  console.log($scope.searchSource);
   // Even when searching rollups, we want to use the default strategy so that we get back a
   // document-like response.
   $scope.searchSource.setPreferredSearchStrategyId('default');
@@ -678,8 +684,6 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
 
   function getStateDefaults() {
     const query = $scope.searchSource.getField('query') || data.query.queryString.getDefaultQuery();
-    //const query = $scope.searchSource.getField('query');
-    debugger;
     return {
       query,
       sort: getSortArray(savedSearch.sort, $scope.indexPattern),
@@ -688,7 +692,6 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
           ? savedSearch.columns
           : config.get(DEFAULT_COLUMNS_SETTING).slice(),
       index: $scope.indexPattern.id,
-      pit: $scope.selectedPointInTime,
       interval: 'auto',
       filters: _.cloneDeep($scope.searchSource.getOwnField('filter')),
     };
@@ -703,7 +706,6 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
     timefield: getTimeField(),
     savedSearch: savedSearch,
     indexPatternList: $route.current.locals.savedObjects.ip.list,
-    pointInTimeList: $route.current.locals.savedObjects.pit.list,
     config: config,
     fixedScroll: createFixedScroll($scope, $timeout),
     setHeaderActionMenu: getHeaderActionMenuMounter(),
@@ -1085,6 +1087,8 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
 
   $scope.updateDataSource = () => {
     const { indexPattern, searchSource } = $scope;
+    console.log("here");
+    console.log(searchSource);
     searchSource
       .setField('index', $scope.indexPattern)
       .setField('size', $scope.opts.sampleSize)
@@ -1098,6 +1102,7 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
       )
       .setField('query', data.query.queryString.getQuery() || null)
       .setField('filter', filterManager.getFilters());
+    console.log(searchSource);
     return Promise.resolve();
   };
 

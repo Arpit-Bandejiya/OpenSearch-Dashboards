@@ -83,6 +83,7 @@ function fetchContextProvider(indexPatterns: IndexPatternsContract) {
       return [];
     }
     const indexPattern = await indexPatterns.get(indexPatternId);
+    console.log("is this first");
     const searchSource = await createSearchSource(indexPattern, filters);
     const sortDirToApply = type === 'successors' ? sortDir : reverseSortDir(sortDir);
 
