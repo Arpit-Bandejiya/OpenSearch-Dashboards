@@ -80,6 +80,10 @@ interface PointInTimeTableItem {
     default: boolean;
     tag?: string[];
     sort: string;
+    keepAlive: string;
+    source: string;
+    creation: string;
+    expiration: string;
 }
 
 interface PointInTimeManagmentContext {
@@ -98,13 +102,21 @@ const item1: PointInTimeTableItem = {
     id: 'id1',
     title: 'pit1',
     default: false,
-    sort: '0pit1'
+    sort: '0pit1',
+    keepAlive: "24",
+    source: "ind-1",
+    creation: "24",
+    expiration: "24"
 };
 const item2: PointInTimeTableItem = {
     id: 'id2',
     title: 'pit2',
     default: false,
-    sort: '1pit2'
+    sort: '1pit2',
+    keepAlive: "24",
+    source: "ind-2",
+    creation: "24",
+    expiration: "24"
 };
 
 export async function getPits(savedObjects) {
@@ -118,8 +130,17 @@ export async function getPits(savedObjects) {
                 console.log(pattern)
                 const id = pattern.id;
                 const name = pattern.get('name');
-
-
+                const keepAlive = pattern.get('keepAlive');
+                const source = pattern.references[0].name;
+                const creation = pattern.updated_at;
+                var date1 = new Date();
+                var date2 = new Date(creation);
+                var diff = new Date(date2.getTime() - date1.getTime());
+                console.log(diff);
+                var years = diff.getUTCFullYear() - 1970; // Gives difference as year
+                var months = diff.getUTCMonth(); // Gives month count of difference
+                var days = diff.getUTCDate()-1; // Gives day count of difference
+                const expiration = diff.getUTCHours();
                 return {
                     id,
                     title: name,
@@ -127,7 +148,11 @@ export async function getPits(savedObjects) {
                     // so the sorting will but the default index on top
                     // or on bottom of a the table
                     sort: `${name}`,
-                    default: false
+                    default: false,
+                    keepAlive: keepAlive,
+                    source: source,
+                    creation: creation,
+                    expiration: expiration
                 };
             })
             .sort((a, b) => {
@@ -147,6 +172,7 @@ export const PointInTimeTable = ({ canSave, history }: Props) => {
     const tableRef = useRef();
     const [pits, setPits] = useState([item1, item2]);
     const [selection, setSelection] = useState([]);
+    const [isFlyoutVisible, setIsFlyoutVisible] = useState(false);
     const {
         setBreadcrumbs,
         savedObjects,
@@ -171,7 +197,7 @@ export const PointInTimeTable = ({ canSave, history }: Props) => {
             setLoading(false);
         })();
     }, [
-        savedObjects.client,
+        savedObjects.client, isFlyoutVisible, 
     ]);
 
     // const renderToolsLeft = () => {
@@ -295,6 +321,42 @@ export const PointInTimeTable = ({ canSave, history }: Props) => {
             dataType: 'string' as const,
             sortable: ({ sort }: { sort: string }) => sort,
         },
+        {
+            field: 'source',
+            name: 'Source',
+            render: (title: string, object: PointInTimeTableItem) => {
+
+                return <span>{object.source}</span>;
+            },
+            dataType: 'string' as const
+        },
+        {
+            field: 'keepalive',
+            name: 'Keep alive',
+            render: (title: string, object: PointInTimeTableItem) => {
+
+                return <span>{object.keepAlive}</span>;
+            },
+            dataType: 'string' as const
+        },
+        {
+            field: 'creation',
+            name: 'Created at',
+            render: (title: string, object: PointInTimeTableItem) => {
+
+                return <span>{object.creation}</span>;
+            },
+            dataType: 'string' as const
+        },
+        {
+            field: 'expiration',
+            name: 'Expiration in',
+            render: (title: string, object: PointInTimeTableItem) => {
+
+                return <span>{object.expiration}</span>;
+            },
+            dataType: 'string' as const
+        },
     ];
 
     // return (
@@ -350,7 +412,7 @@ export const PointInTimeTable = ({ canSave, history }: Props) => {
                     </EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem grow={false}>
-                    <PointInTimeFlyout />
+                    <PointInTimeFlyout setIsFlyoutVisible={setIsFlyoutVisible}/>
                 </EuiFlexItem>
 
             </EuiFlexGroup>

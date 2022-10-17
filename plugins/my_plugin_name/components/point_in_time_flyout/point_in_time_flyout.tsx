@@ -36,6 +36,7 @@ import { DataPublicPluginStart } from 'src/plugins/data/public';
 import { ManagementAppMountParams } from 'src/plugins/management/public';
 import { CoreStart, HttpFetchError } from 'opensearch-dashboards/public';
 import {CREATE_POINT_IN_TIME_PATH} from "../../common";
+import { RouteComponentProps } from 'react-router-dom';
 
 export interface IndexPatternManagmentContext {
     chrome: ChromeStart;
@@ -127,33 +128,11 @@ export async function findByTitle(client, title: string) {
     }
 }
 
-export async function createSavedObject(pointintime, client, reference) {
-    const dupe = await findByTitle(client, pointintime.id);
-    console.log(dupe);
-    if(dupe) {
-        throw new Error(`Duplicate Point in time: ${pointintime.id}`);
-    }
-    // if (dupe) {
-    //     if (override) {
-    //         await this.delete(dupe.id);
-    //     } else {
-    //         throw new DuplicateIndexPatternError(`Duplicate index pattern: ${indexPattern.title}`);
-    //     }
-    // }
 
-    const body = pointintime;
-    const references = [{...reference}];
-    const savedObjectType = "point-in-time";
-    const response = await client.create(savedObjectType, body, {
-        id: pointintime.id,
-        references,
-    });
-    console.log(response);
-    pointintime.id = response.id;
-    return pointintime;
+interface Props extends RouteComponentProps {
+    setIsFlyoutVisible: (isFlyoutVisible: boolean) => void;
 }
-
-export const PointInTimeFlyout = () => {
+export const PointInTimeFlyout = (props:Props) => {
 
     const [isFlyoutVisible, setIsFlyoutVisible] = useState(false);
     const [showErrors, setShowErrors] = useState(false);
@@ -205,6 +184,7 @@ export const PointInTimeFlyout = () => {
       console.log('keep alive :' + keepAlive);
       console.log("name : " + pitName);
       console.log("index pattern : " + selectedIndexPattern);
+      setLoading(true);
       const pattern = indexPatterns.find((r)=>r.id);
 
       //setIsFlyoutVisible(false);
@@ -222,6 +202,35 @@ export const PointInTimeFlyout = () => {
             name: pattern.title
         }
         createSavedObject(pit, savedObjects.client,reference, http)
+    }
+
+    async function createSavedObject(pointintime, client, reference,) {
+        const dupe = await findByTitle(client, pointintime.id);
+        console.log(dupe);
+        if(dupe) {
+            throw new Error(`Duplicate Point in time: ${pointintime.id}`);
+        }
+        // if (dupe) {
+        //     if (override) {
+        //         await this.delete(dupe.id);
+        //     } else {
+        //         throw new DuplicateIndexPatternError(`Duplicate index pattern: ${indexPattern.title}`);
+        //     }
+        // }
+    
+        const body = pointintime;
+        const references = [{...reference}];
+        const savedObjectType = "point-in-time";
+        const response = await client.create(savedObjectType, body, {
+            id: pointintime.id,
+            references,
+        });
+        console.log(response);
+        pointintime.id = response.id;
+        setLoading(false);
+        setIsFlyoutVisible(false);
+        props.setIsFlyoutVisible(true);
+        return pointintime;
     }
 
 
@@ -402,7 +411,7 @@ export const PointInTimeFlyout = () => {
                         </EuiButtonEmpty>
                     </EuiFlexItem>
                     <EuiFlexItem grow={false}>
-                        <EuiButton onClick={createPointInTime} fill>
+                        <EuiButton onClick={createPointInTime} fill isLoading={loading}>
                             Save
                         </EuiButton>
                     </EuiFlexItem>
@@ -422,7 +431,7 @@ export const PointInTimeFlyout = () => {
             >
                 Create point in time
             </EuiButton>
-            {flyout}
+            {isFlyoutVisible && flyout}
         </div>
     );
 };
