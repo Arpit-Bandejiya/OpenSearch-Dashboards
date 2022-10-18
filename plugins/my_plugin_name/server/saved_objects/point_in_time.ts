@@ -14,7 +14,7 @@ export const pointInTime: SavedObjectsType = {
     defaultSearchField: 'title',
     importableAndExportable: true,
     getTitle(obj) {
-      return obj.attributes.title;
+      return obj.attributes.name;
     },
     // getEditUrl(obj) {
     //   return `/management/opensearch-dashboards/dataSources/${encodeURIComponent(obj.id)}`;

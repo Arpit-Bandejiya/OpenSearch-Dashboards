@@ -43,6 +43,7 @@ import {
 } from '../../../../src/plugins/opensearch_dashboards_react/public';
 import { PointInTimeFlyout } from '../point_in_time_flyout';
 import { IndexPatternManagmentContext } from '../point_in_time_flyout/point_in_time_flyout';
+import moment from 'moment';
 
 
 const pagination = {
@@ -132,15 +133,17 @@ export async function getPits(savedObjects) {
                 const name = pattern.get('name');
                 const keepAlive = pattern.get('keepAlive');
                 const source = pattern.references[0].name;
-                const creation = pattern.updated_at;
+                const creation = moment(pattern.updated_at).format("YYYYMMDD HH:mm:ss");
                 var date1 = new Date();
-                var date2 = new Date(creation);
-                var diff = new Date(date2.getTime() - date1.getTime());
+                var date2 = new Date(pattern.updated_at);
+                var diff = new Date(date1.getTime() - date2.getTime());
                 console.log(diff);
-                var years = diff.getUTCFullYear() - 1970; // Gives difference as year
-                var months = diff.getUTCMonth(); // Gives month count of difference
-                var days = diff.getUTCDate()-1; // Gives day count of difference
-                const expiration = diff.getUTCHours();
+                let expiration = "0";
+                if(keepAlive < diff.getUTCHours() + 1) 
+                    expiration = "Expired";
+                else
+                     expiration = (24 - (diff.getUTCHours() + 1)).toString();
+
                 return {
                     id,
                     title: name,
@@ -412,7 +415,7 @@ export const PointInTimeTable = ({ canSave, history }: Props) => {
                     </EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem grow={false}>
-                    <PointInTimeFlyout setIsFlyoutVisible={setIsFlyoutVisible}/>
+                    <PointInTimeFlyout setIsFlyoutVisible={setIsFlyoutVisible} isFlyoutVisible={isFlyoutVisible}/>
                 </EuiFlexItem>
 
             </EuiFlexGroup>

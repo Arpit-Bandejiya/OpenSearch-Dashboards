@@ -64,7 +64,8 @@ export interface SavedObjectReference {
 export interface PointInTime {
     name: string,
     keepAlive: string,
-    id: string
+    id: string,
+    title: string
 }
 export async function getIndexPatterns(savedObjectsClient) {
     return (
@@ -131,6 +132,7 @@ export async function findByTitle(client, title: string) {
 
 interface Props extends RouteComponentProps {
     setIsFlyoutVisible: (isFlyoutVisible: boolean) => void;
+    isFlyoutVisible: boolean;
 }
 export const PointInTimeFlyout = (props:Props) => {
 
@@ -192,6 +194,7 @@ export const PointInTimeFlyout = (props:Props) => {
       const response = await http.post(`${CREATE_POINT_IN_TIME_PATH}/${index}`);
       const pit:PointInTime = {
             name: pitName,
+            title: pitName,
             keepAlive: keepAlive,
             id: response.pit_id // Todo create pit and fill the pit id
         }
@@ -229,7 +232,7 @@ export const PointInTimeFlyout = (props:Props) => {
         pointintime.id = response.id;
         setLoading(false);
         setIsFlyoutVisible(false);
-        props.setIsFlyoutVisible(true);
+        props.setIsFlyoutVisible(!props.isFlyoutVisible);
         return pointintime;
     }
 
