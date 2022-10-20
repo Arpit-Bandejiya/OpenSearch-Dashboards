@@ -28,7 +28,7 @@
  * under the License.
  */
 
-import { GetFieldsOptions, IIndexPatternsApiClient } from '../../common/index_patterns/types';
+import { GetFieldsOptions, IIndexPatternsApiClient } from '../../common';
 
 export class IndexPatternsApiServer implements IIndexPatternsApiClient {
   async getFieldsForTimePattern(options: GetFieldsOptions = {}) {

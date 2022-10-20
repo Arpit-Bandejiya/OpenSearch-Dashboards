@@ -45,6 +45,7 @@ export function createIndexPatternCache(): PatternCache {
     },
     set: (id: string, prom: any) => {
       vals[id] = prom;
+      console.log("This is the set value", prom);
       return prom;
     },
     clear: (id: string) => {
