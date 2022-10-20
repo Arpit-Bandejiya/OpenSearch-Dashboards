@@ -1,15 +1,25 @@
-import {EuiButton, EuiFlexItem, EuiPopover, EuiSelectable, EuiSelectableOption} from "@elastic/eui";
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import {
+  EuiButton,
+  EuiFlexItem,
+  EuiPopover,
+  EuiSelectable,
+  EuiSelectableOption,
+} from '@elastic/eui';
 import React, { useState } from 'react';
 
 interface ChangePatternDeps {
   setIndexPatternIsSelected: (value: boolean) => void;
   setPointInTimeIsSelected: (value: boolean) => void;
-
 }
 
 export function ChangePatternFilter({
   setIndexPatternIsSelected,
-  setPointInTimeIsSelected
+  setPointInTimeIsSelected,
 }: ChangePatternDeps) {
   const [options, setOptions] = useState<EuiSelectableOption[]>([
     { label: 'point-in-time', checked: 'on' },
@@ -64,8 +74,7 @@ export function ChangePatternFilter({
         >
           {(list) => <div style={{ width: 240 }}>{list}</div>}
         </EuiSelectable>
-
       </EuiPopover>
     </EuiFlexItem>
-  )
+  );
 }

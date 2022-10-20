@@ -37,7 +37,7 @@ import dateMath from '@elastic/datemath';
 import { i18n } from '@osd/i18n';
 import { getState, splitState } from './discover_state';
 
-import { RequestAdapter } from '../../../../inspector/public';
+import { RequestAdapter } from '../../../../inspector';
 import {
   opensearchFilters,
   indexPatterns as indexPatternsUtils,
@@ -285,7 +285,6 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
 
   // sync initial app filters from state to filterManager
   filterManager.setAppFilters(_.cloneDeep(appStateContainer.getState().filters));
-  debugger;
   data.query.queryString.setQuery(appStateContainer.getState().query);
   const stopSyncingQueryAppStateWithStateContainer = connectToQueryState(
     data.query,
@@ -333,7 +332,6 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
   $scope.setIndexPattern = async (id) => {
     try {
       const nextIndexPattern = await indexPatterns.get(id);
-      debugger;
       if (nextIndexPattern) {
         const nextAppState = getSwitchIndexPatternAppState(
           $scope.indexPattern,
@@ -343,28 +341,22 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
           config.get(MODIFY_COLUMNS_ON_SWITCH)
         );
         await replaceUrlAppState(nextAppState);
-        debugger;
         $route.reload();
       }
     } catch (e) {
-      // console.log("This is a PIT");
-      //  // console.log("This is teh pit list", $route.current.locals.savedObjects.pit);
-      // const pitList = await $route.current.locals.savedObjects.pit;
-      // const nextPit = pitList.find((pit) => (pit.id === id));
-      //
-      //
-      // const nextAppState = getSwitchIndexPatternAppState(
-      //   $scope.indexPattern,
-      //   nextPit,
-      //   $scope.state.columns,
-      //   $scope.state.sort,
-      //   config.get(MODIFY_COLUMNS_ON_SWITCH)
-      // );
-      // await replaceUrlAppState(nextAppState);
-      // $route.reload();
-      // console.log(nextPit);
+      const nextIndexPattern = await indexPatterns.get(id);
+      if (nextIndexPattern) {
+        const nextAppState = getSwitchIndexPatternAppState(
+          $scope.indexPattern,
+          nextIndexPattern,
+          $scope.state.columns,
+          $scope.state.sort,
+          config.get(MODIFY_COLUMNS_ON_SWITCH)
+        );
+        await replaceUrlAppState(nextAppState);
+        $route.reload();
     }
-  };
+  }
 
   $scope.setPointInTime = async (id) => {
     console.log('This is teh pit list', $route.current.locals.savedObjects.pit.list);
@@ -678,8 +670,6 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
 
   function getStateDefaults() {
     const query = $scope.searchSource.getField('query') || data.query.queryString.getDefaultQuery();
-    //const query = $scope.searchSource.getField('query');
-    debugger;
     return {
       query,
       sort: getSortArray(savedSearch.sort, $scope.indexPattern),
@@ -881,10 +871,8 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
     // Abort any in-progress requests before fetching again
     if (abortController) abortController.abort();
     abortController = new AbortController();
-    debugger;
+    // if selected Point in time is not null that means the user has selected a PIT saved object
     if ($scope.selectedPointInTime != null) {
-      console.log($scope.selectedPointInTime);
-      console.log('There is a selected Point in Time Object');
       $scope
         .updateDataSource()
         .then(setupVisualization)
@@ -892,6 +880,7 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
           $scope.fetchStatus = fetchStatuses.LOADING;
           logInspectorRequest();
           // eslint-disable-next-line camelcase
+          // Since search source does not support pit, this is an work around to make the fetch call
           const search_source_local = _.cloneDeep($scope.searchSource);
           // search_source_local = $scope.searchSource;
           console.log('This is the local search source');
@@ -905,8 +894,6 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
           // searchRequest.params.body = { ...searchRequest.params.body, ...pit_json };
           search_source_local.fields = { ...search_source_local.fields, ...pit_json };
           delete search_source_local.fields.index;
-          console.log(search_source_local);
-          debugger;
           return await search_source_local.fetch({
             abortSignal: abortController.signal,
           });
@@ -922,6 +909,7 @@ function discoverController($element, $route, $scope, $timeout, $window, Promise
           data.search.showError(error);
         });
     } else {
+      // this is the default call for fetching the index pattern results
       $scope
         .updateDataSource()
         .then(setupVisualization)

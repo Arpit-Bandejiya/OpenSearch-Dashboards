@@ -934,6 +934,17 @@ module.exports = __osdSharedDeps__.OsdI18nReact;
 
 /***/ }),
 
+/***/ "moment":
+/*!*******************************************!*\
+  !*** external "__osdSharedDeps__.Moment" ***!
+  \*******************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = __osdSharedDeps__.Moment;
+
+/***/ }),
+
 /***/ "plugin/opensearchDashboardsReact/public":
 /*!****************************************************************!*\
   !*** @osd/bundleRef "plugin/opensearchDashboardsReact/public" ***!

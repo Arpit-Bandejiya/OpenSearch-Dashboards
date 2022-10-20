@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -30,43 +29,39 @@
  */
 
 import { i18n } from '@osd/i18n';
-import React, {useState, Fragment, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Random,
   EuiButtonEmpty,
   EuiPopover,
   EuiPopoverTitle,
   EuiSelectable,
   EuiButtonEmptyProps,
-  EuiSearchBar,
   EuiSpacer,
-  EuiHealth,
-  EuiCallOut, EuiFlexGroup, EuiFlexItem, EuiButton, EuiSelectableOption,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiSelectableOption,
 } from '@elastic/eui';
 import { EuiSelectableProps } from '@elastic/eui/src/components/selectable/selectable';
-import {times} from "lodash";
-import {IndexPatternRef, PointInTimeRef} from './types';
-import {ChangePatternFilter} from "./change_pattern_filter";
+import { IndexPatternRef, PointInTimeRef } from './types';
+import { ChangePatternFilter } from './change_pattern_filter';
 
 export type ChangeIndexPatternTriggerProps = EuiButtonEmptyProps & {
   label: string;
   title?: string;
 };
 
-
-
 export function ChangeIndexPattern({
   indexPatternRefs,
   pointInTimeRefs,
   indexPatternId,
-  onChangeIndexPattern,
+  onChangePattern,
   trigger,
   selectableProps,
 }: {
   trigger: ChangeIndexPatternTriggerProps;
   indexPatternRefs: IndexPatternRef[];
   pointInTimeRefs: PointInTimeRef[];
-  onChangeIndexPattern: (newId: string) => void;
+  onChangePattern: (newId: string) => void;
   indexPatternId?: string;
   selectableProps?: EuiSelectableProps;
 }) {
@@ -92,58 +87,62 @@ export function ChangeIndexPattern({
     );
   };
 
-  // const names=['index_1_point_in_time', 'point_in_time', 'moonlight','baby_yoda', 'last_jedi']
-  // const pointInTime = times(5,(id) => {
-  //   return {
-  //     id,
-  //     name: names[id],
-  //     tag: 'point-in-time'
-  //   };
-  // });
-
   interface OptionData {
-    value? : string | number
-    references? : any
+    value?: string | number;
+    references?: any;
   }
-  const indexpatternOptions = (isSelected: boolean) => { return isSelected? [{
-    label: "index-pattern",
-    isGroupLabel: true
-  },
-    ...indexPatternRefs.map(({ title, id }): EuiSelectableOption<OptionData> => ({
-      label: title,
-      key: id,
-      searchableLabel: title,
-      value: id,
-      checked: id === indexPatternId ? 'on' : undefined,
-    })),]: []
+  const indexPatternOptions = (isSelected: boolean) => {
+    return isSelected
+      ? [
+          {
+            label: 'index-pattern',
+            isGroupLabel: true,
+          },
+          ...indexPatternRefs.map(
+            ({ title, id }): EuiSelectableOption<OptionData> => ({
+              label: title,
+              key: id,
+              searchableLabel: title,
+              value: id,
+              checked: id === indexPatternId ? 'on' : undefined,
+            })
+          ),
+        ]
+      : [];
   };
 
-  const pointInTimeOptions = (isSelected: boolean) => { return isSelected? [{
-    label: "point-in-time",
-    isGroupLabel: true
-  },
-    ...pointInTimeRefs.map(({ title, id, references }): EuiSelectableOption<OptionData> => ({
-      label: title,
-      key: title,
-      searchableLabel: title,
-      value: id,
-      references,
-      checked: id === indexPatternId ? 'on' : undefined,
-    }))]: []
+  const pointInTimeOptions = (isSelected: boolean) => {
+    return isSelected
+      ? [
+          {
+            label: 'point-in-time',
+            isGroupLabel: true,
+          },
+          ...pointInTimeRefs.map(
+            ({ title, id, references }): EuiSelectableOption<OptionData> => ({
+              label: title,
+              key: title,
+              searchableLabel: title,
+              value: id,
+              references,
+              checked: id === indexPatternId ? 'on' : undefined,
+            })
+          ),
+        ]
+      : [];
   };
 
   const [options, setOptions] = useState<Array<EuiSelectableOption<OptionData>>>([
-      ...indexpatternOptions(isIndexPatternSelected),
+    ...indexPatternOptions(isIndexPatternSelected),
+    ...pointInTimeOptions(isPointInTimeSelected),
+  ]);
+
+  useEffect(() => {
+    setOptions([
+      ...indexPatternOptions(isIndexPatternSelected),
       ...pointInTimeOptions(isPointInTimeSelected),
     ]);
-
-  useEffect(()=> {
-    setOptions([
-      ...indexpatternOptions(isIndexPatternSelected),
-      ...pointInTimeOptions(isPointInTimeSelected),
-    ])
-  },[isIndexPatternSelected, isPointInTimeSelected]);
-
+  }, [isIndexPatternSelected, isPointInTimeSelected]);
 
   return (
     <EuiPopover
@@ -170,14 +169,11 @@ export function ChangeIndexPattern({
           searchable
           singleSelection="always"
           options={options}
-          onChange={(choices:Array<EuiSelectableOption<OptionData>>) => {
+          onChange={(choices: Array<EuiSelectableOption<OptionData>>) => {
             const choice = (choices.find(({ checked }) => checked) as unknown) as {
               value: string;
             };
-            // console.log('this is the choice');
-            // console.log(choice);
-            // console.log(choices);
-            onChangeIndexPattern(choice.value);
+            onChangePattern(choice.value);
             setPopoverIsOpen(false);
           }}
           searchProps={{
@@ -188,12 +184,11 @@ export function ChangeIndexPattern({
           {(list, search) => (
             <>
               <EuiFlexGroup>
-                <EuiFlexItem>
-                  {search}
-                </EuiFlexItem>
+                <EuiFlexItem>{search}</EuiFlexItem>
                 <ChangePatternFilter
                   setIndexPatternIsSelected={setIndexPatternIsSelected}
-                  setPointInTimeIsSelected={setPointInTimeIsSelected} />
+                  setPointInTimeIsSelected={setPointInTimeIsSelected}
+                />
               </EuiFlexGroup>
 
               {list}

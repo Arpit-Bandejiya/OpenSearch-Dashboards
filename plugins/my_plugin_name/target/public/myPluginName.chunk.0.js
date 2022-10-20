@@ -20,7 +20,7 @@ __webpack_require__.r(__webpack_exports__);
 /*!******************************************************************!*\
   !*** ./components/point_in_time_flyout/point_in_time_flyout.tsx ***!
   \******************************************************************/
-/*! exports provided: getIndexPatterns, getPits, findByTitle, createSavedObject, PointInTimeFlyout */
+/*! exports provided: getIndexPatterns, getPits, findByTitle, PointInTimeFlyout */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -28,7 +28,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getIndexPatterns", function() { return getIndexPatterns; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getPits", function() { return getPits; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "findByTitle", function() { return findByTitle; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createSavedObject", function() { return createSavedObject; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PointInTimeFlyout", function() { return PointInTimeFlyout; });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "react");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -92,34 +91,7 @@ async function findByTitle(client, title) {
     return savedObjects.savedObjects.find(obj => obj.attributes.id.toLowerCase() === title.toLowerCase());
   }
 }
-async function createSavedObject(pointintime, client, reference) {
-  const dupe = await findByTitle(client, pointintime.id);
-  console.log(dupe);
-
-  if (dupe) {
-    throw new Error(`Duplicate Point in time: ${pointintime.id}`);
-  } // if (dupe) {
-  //     if (override) {
-  //         await this.delete(dupe.id);
-  //     } else {
-  //         throw new DuplicateIndexPatternError(`Duplicate index pattern: ${indexPattern.title}`);
-  //     }
-  // }
-
-
-  const body = pointintime;
-  const references = [{ ...reference
-  }];
-  const savedObjectType = "point-in-time";
-  const response = await client.create(savedObjectType, body, {
-    id: pointintime.id,
-    references
-  });
-  console.log(response);
-  pointintime.id = response.id;
-  return pointintime;
-}
-const PointInTimeFlyout = () => {
+const PointInTimeFlyout = props => {
   const [isFlyoutVisible, setIsFlyoutVisible] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(false);
   const [showErrors, setShowErrors] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(false);
   const [keepAlive, setKeepAlive] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])('24');
@@ -166,12 +138,14 @@ const PointInTimeFlyout = () => {
     console.log('keep alive :' + keepAlive);
     console.log("name : " + pitName);
     console.log("index pattern : " + selectedIndexPattern);
+    setLoading(true);
     const pattern = indexPatterns.find(r => r.id); //setIsFlyoutVisible(false);
 
     const index = pattern.title;
     const response = await http.post(`${_common__WEBPACK_IMPORTED_MODULE_4__["CREATE_POINT_IN_TIME_PATH"]}/${index}`);
     const pit = {
       name: pitName,
+      title: pitName,
       keepAlive: keepAlive,
       id: response.pit_id // Todo create pit and fill the pit id
 
@@ -182,7 +156,38 @@ const PointInTimeFlyout = () => {
       name: pattern.title
     };
     createSavedObject(pit, savedObjects.client, reference, http);
-  }; // useEffect(() => {
+  };
+
+  async function createSavedObject(pointintime, client, reference) {
+    const dupe = await findByTitle(client, pointintime.id);
+    console.log(dupe);
+
+    if (dupe) {
+      throw new Error(`Duplicate Point in time: ${pointintime.id}`);
+    } // if (dupe) {
+    //     if (override) {
+    //         await this.delete(dupe.id);
+    //     } else {
+    //         throw new DuplicateIndexPatternError(`Duplicate index pattern: ${indexPattern.title}`);
+    //     }
+    // }
+
+
+    const body = pointintime;
+    const references = [{ ...reference
+    }];
+    const savedObjectType = "point-in-time";
+    const response = await client.create(savedObjectType, body, {
+      id: pointintime.id,
+      references
+    });
+    console.log(response);
+    pointintime.id = response.id;
+    setLoading(false);
+    setIsFlyoutVisible(false);
+    props.setIsFlyoutVisible(!props.isFlyoutVisible);
+    return pointintime;
+  } // useEffect(() => {
   //     const gettedIndexPatterns: PointInTimeFlyoutItem[] = getIndexPatterns(
   //                     savedObjects.client
   //                 );
@@ -346,7 +351,8 @@ const PointInTimeFlyout = () => {
       grow: false
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_elastic_eui__WEBPACK_IMPORTED_MODULE_1__["EuiButton"], {
       onClick: createPointInTime,
-      fill: true
+      fill: true,
+      isLoading: loading
     }, "Save")))));
   }
 
@@ -354,7 +360,7 @@ const PointInTimeFlyout = () => {
     onClick: () => setIsFlyoutVisible(true),
     iconType: "plusInCircle",
     fill: true
-  }, "Create point in time"), flyout);
+  }, "Create point in time"), isFlyoutVisible && flyout);
 };
 
 function useGeneratedHtmlId(arg0) {
@@ -404,6 +410,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _src_plugins_opensearch_dashboards_react_public__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../../../src/plugins/opensearch_dashboards_react/public */ "plugin/opensearchDashboardsReact/public");
 /* harmony import */ var _src_plugins_opensearch_dashboards_react_public__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_src_plugins_opensearch_dashboards_react_public__WEBPACK_IMPORTED_MODULE_5__);
 /* harmony import */ var _point_in_time_flyout__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../point_in_time_flyout */ "./components/point_in_time_flyout/index.ts");
+/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! moment */ "moment");
+/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_7__);
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -414,6 +422,7 @@ __webpack_require__.r(__webpack_exports__);
  * Any modifications Copyright OpenSearch Contributors. See
  * GitHub history for details.
  */
+
 
 
 
@@ -441,13 +450,21 @@ const item1 = {
   id: 'id1',
   title: 'pit1',
   default: false,
-  sort: '0pit1'
+  sort: '0pit1',
+  keepAlive: "24",
+  source: "ind-1",
+  creation: "24",
+  expiration: "24"
 };
 const item2 = {
   id: 'id2',
   title: 'pit2',
   default: false,
-  sort: '1pit2'
+  sort: '1pit2',
+  keepAlive: "24",
+  source: "ind-2",
+  creation: "24",
+  expiration: "24"
 };
 async function getPits(savedObjects) {
   return savedObjects.find({
@@ -457,6 +474,15 @@ async function getPits(savedObjects) {
     console.log(pattern);
     const id = pattern.id;
     const name = pattern.get('name');
+    const keepAlive = pattern.get('keepAlive');
+    const source = pattern.references[0].name;
+    const creation = moment__WEBPACK_IMPORTED_MODULE_7___default()(pattern.updated_at).format("YYYYMMDD HH:mm:ss");
+    var date1 = new Date();
+    var date2 = new Date(pattern.updated_at);
+    var diff = new Date(date1.getTime() - date2.getTime());
+    console.log(diff);
+    let expiration = "0";
+    if (keepAlive < diff.getUTCHours() + 1) expiration = "Expired";else expiration = (24 - (diff.getUTCHours() + 1)).toString();
     return {
       id,
       title: name,
@@ -464,7 +490,11 @@ async function getPits(savedObjects) {
       // so the sorting will but the default index on top
       // or on bottom of a the table
       sort: `${name}`,
-      default: false
+      default: false,
+      keepAlive: keepAlive,
+      source: source,
+      creation: creation,
+      expiration: expiration
     };
   }).sort((a, b) => {
     if (a.sort < b.sort) {
@@ -485,6 +515,7 @@ const PointInTimeTable = _ref => {
   const tableRef = Object(react__WEBPACK_IMPORTED_MODULE_3__["useRef"])();
   const [pits, setPits] = Object(react__WEBPACK_IMPORTED_MODULE_3__["useState"])([item1, item2]);
   const [selection, setSelection] = Object(react__WEBPACK_IMPORTED_MODULE_3__["useState"])([]);
+  const [isFlyoutVisible, setIsFlyoutVisible] = Object(react__WEBPACK_IMPORTED_MODULE_3__["useState"])(false);
   const {
     setBreadcrumbs,
     savedObjects,
@@ -506,7 +537,7 @@ const PointInTimeTable = _ref => {
       console.log(gettedIndexPatterns);
       setLoading(false);
     })();
-  }, [savedObjects.client]); // const renderToolsLeft = () => {
+  }, [savedObjects.client, isFlyoutVisible]); // const renderToolsLeft = () => {
   //     if (selection.length === 0) {
   //         return;
   //     }
@@ -614,6 +645,34 @@ const PointInTimeTable = _ref => {
       } = _ref2;
       return sort;
     }
+  }, {
+    field: 'source',
+    name: 'Source',
+    render: (title, object) => {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", null, object.source);
+    },
+    dataType: 'string'
+  }, {
+    field: 'keepalive',
+    name: 'Keep alive',
+    render: (title, object) => {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", null, object.keepAlive);
+    },
+    dataType: 'string'
+  }, {
+    field: 'creation',
+    name: 'Created at',
+    render: (title, object) => {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", null, object.creation);
+    },
+    dataType: 'string'
+  }, {
+    field: 'expiration',
+    name: 'Expiration in',
+    render: (title, object) => {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", null, object.expiration);
+    },
+    dataType: 'string'
   }]; // return (
   //     <EuiPageContent data-test-subj="pointInTimeTable" role="region" aria-label={ariaRegion}>
   //       <EuiFlexGroup justifyContent="spaceBetween">
@@ -663,7 +722,10 @@ const PointInTimeTable = _ref => {
     defaultMessage: "Create and manage the point in time searches that help you retrieve your data from OpenSearch."
   })))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_elastic_eui__WEBPACK_IMPORTED_MODULE_0__["EuiFlexItem"], {
     grow: false
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_point_in_time_flyout__WEBPACK_IMPORTED_MODULE_6__["PointInTimeFlyout"], null))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_elastic_eui__WEBPACK_IMPORTED_MODULE_0__["EuiSpacer"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_elastic_eui__WEBPACK_IMPORTED_MODULE_0__["EuiInMemoryTable"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_point_in_time_flyout__WEBPACK_IMPORTED_MODULE_6__["PointInTimeFlyout"], {
+    setIsFlyoutVisible: setIsFlyoutVisible,
+    isFlyoutVisible: isFlyoutVisible
+  }))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_elastic_eui__WEBPACK_IMPORTED_MODULE_0__["EuiSpacer"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_elastic_eui__WEBPACK_IMPORTED_MODULE_0__["EuiInMemoryTable"], {
     allowNeutralSort: false,
     itemId: "id",
     isSelectable: true,

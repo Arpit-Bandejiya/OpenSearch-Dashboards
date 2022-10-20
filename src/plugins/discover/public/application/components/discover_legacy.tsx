@@ -60,9 +60,6 @@ import { SavedSearch } from '../../saved_searches';
 import { SavedObject } from '../../../../../core/types';
 import { Vis } from '../../../../visualizations/public';
 import { TopNavMenuData } from '../../../../navigation/public';
-import {
-  PointInTime
-} from "../../../../../../plugins/my_plugin_name/components/point_in_time_flyout/point_in_time_flyout";
 
 export interface DiscoverLegacyProps {
   addColumn: (column: string) => void;
@@ -139,7 +136,6 @@ export function DiscoverLegacy({
   selectedPointInTime,
   setPointInTime,
 }: DiscoverLegacyProps) {
-  debugger;
   const [isSidebarClosed, setIsSidebarClosed] = useState(false);
   const { TopNavMenu } = getServices().navigation.ui;
   const { savedSearch, indexPatternList, pointInTimeList } = opts;
@@ -149,10 +145,12 @@ export function DiscoverLegacy({
       ? bucketAggConfig.buckets?.getInterval()
       : undefined;
   const [fixedScrollEl, setFixedScrollEl] = useState<HTMLElement | undefined>();
-  if (selectedPointInTime!= null){
-    selectedPointInTime = pointInTimeList.find((pattern) => pattern.id === selectedPointInTime);
+  // The selected Point in time here is the id of the saved object, We will be passing the complete object later
+  if (selectedPointInTime != null) {
+    selectedPointInTime = pointInTimeList.find(
+      (pattern: { id: any }) => pattern.id === selectedPointInTime
+    );
   }
-  debugger;
 
   useEffect(() => (fixedScrollEl ? opts.fixedScroll(fixedScrollEl) : undefined), [
     fixedScrollEl,
@@ -214,7 +212,7 @@ export function DiscoverLegacy({
                     onRemoveField={onRemoveColumn}
                     selectedIndexPattern={searchSource && searchSource.getField('index')}
                     setIndexPattern={setIndexPattern}
-                    selectedPointInTime={selectedPointInTime}
+                    selectedPointInTime={selectedPointInTime} // currently search source do not support pit hence passing it in props
                     setPointInTime={setPointInTime}
                   />
                 </div>

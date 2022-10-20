@@ -79,28 +79,21 @@ export function DiscoverIndexPattern({
     type: entity.type,
     references: entity.references,
   }));
+  // TODO: will have a title attribute in the saved object of Point in time
   if (selectedPointInTime) {
     selectedPointInTime = { ...selectedPointInTime, title: selectedPointInTime?.attributes?.name };
   }
   const selectedPattern = selectedPointInTime || selectedIndexPattern || {};
   const { id: selectedId, title: selectedTitle } = selectedPattern;
-  debugger;
   const [selected, setSelected] = useState({
     id: selectedId,
     title: selectedTitle || '',
   });
   useEffect(() => {
-    console.log(selectedPattern);
     const { id, title } = selectedPattern;
     setSelected({ id, title });
-  }, [selectedIndexPattern]);
+  }, [selectedIndexPattern])
 
-  // useEffect(() => {
-  //   console.log("changing to selected point in time");
-  //   const id = pointInTimeList[0].attributes.id;
-  //   const title = pointInTimeList[0].attributes.name;
-  //   setSelected({ id, title });
-  // }, [selectedPointInTime]);
 
   if (!selectedId) {
     return null;
@@ -119,17 +112,15 @@ export function DiscoverIndexPattern({
           indexPatternId={selected.id}
           indexPatternRefs={options}
           pointInTimeRefs={point_in_time_options}
-          onChangeIndexPattern={(id) => {
+          onChangePattern={(id) => {
             const indexPattern = options.find((pattern) => pattern.id === id);
             if (indexPattern) {
               setIndexPattern(id);
               setSelected(indexPattern);
             }
-            const pointInTime = point_in_time_options.find((pattern) => pattern.id == id);
+            const pointInTime = point_in_time_options.find((pattern) => pattern.id === id);
             if (pointInTime) {
-              // setIndexPattern(pointInTime.id);
-              // setIndexPattern(pointInTime.id);
-              setPointInTime(pointInTime.id);
+              setPointInTime(id);
               const PitId = pointInTimeList[0].attributes.id;
               const title = pointInTimeList[0].attributes.name;
               setSelected({ id: PitId, title });
