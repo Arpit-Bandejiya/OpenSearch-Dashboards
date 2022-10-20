@@ -1,0 +1,1 @@
+export { PointInTimeTableWithRouter } from './point_in_time_table';

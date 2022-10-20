@@ -55,6 +55,8 @@ export function createDiscoverLegacyDirective(reactDirective: any) {
     ['savedSearch', { watchDepth: 'reference' }],
     ['searchSource', { watchDepth: 'reference' }],
     ['setIndexPattern', { watchDepth: 'reference' }],
+    ['setPointInTime', { watchDepth: 'reference' }],
+    ['selectedPointInTime', { watchDepth: 'reference' }],
     ['showSaveQuery', { watchDepth: 'reference' }],
     ['state', { watchDepth: 'reference' }],
     ['timefilterUpdateHandler', { watchDepth: 'reference' }],

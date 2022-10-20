@@ -74,6 +74,7 @@ interface SavedObjectBody {
 type FormatFieldFn = (hit: Record<string, any>, fieldName: string) => any;
 
 const DATA_SOURCE_REFERNECE_NAME = 'dataSource';
+
 export class IndexPattern implements IIndexPattern {
   public id?: string;
   public title: string = '';

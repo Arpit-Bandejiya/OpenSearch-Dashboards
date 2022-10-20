@@ -167,6 +167,7 @@ export class SearchService implements Plugin<ISearchSetup, ISearchStart> {
         searchRequest: IOpenSearchDashboardsSearchRequest,
         options: Record<string, any>
       ) => {
+        console.log(' this is the search call');
         return this.search(context, searchRequest, options);
       },
       searchSource: {

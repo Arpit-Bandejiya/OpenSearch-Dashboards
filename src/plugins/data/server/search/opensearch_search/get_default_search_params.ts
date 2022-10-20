@@ -49,7 +49,7 @@ export async function getDefaultSearchParams(uiSettingsClient: IUiSettingsClient
     maxConcurrentShardRequests:
       maxConcurrentShardRequests > 0 ? maxConcurrentShardRequests : undefined,
     ignoreThrottled,
-    ignoreUnavailable: true, // Don't fail if the index/indices don't exist
+    ignoreUnavailable: false, // Don't fail if the index/indices don't exist
     trackTotalHits: true,
   };
 }

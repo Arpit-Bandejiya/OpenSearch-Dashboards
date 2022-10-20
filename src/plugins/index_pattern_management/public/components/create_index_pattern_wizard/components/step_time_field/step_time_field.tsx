@@ -123,6 +123,7 @@ export class StepTimeField extends Component<StepTimeFieldProps, StepTimeFieldSt
     const { getFetchForWildcardOptions } = this.props.indexPatternCreationType;
 
     this.setState({ isFetchingTimeFields: true });
+    console.log("This is setting the state");
     const fields = await ensureMinimumTime(
       this.context.services.data.indexPatterns.getFieldsForWildcard({
         pattern,

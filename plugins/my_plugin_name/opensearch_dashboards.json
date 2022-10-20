@@ -1,0 +1,9 @@
+{
+  "id": "myPluginName",
+  "version": "1.0.0",
+  "opensearchDashboardsVersion": "opensearchDashboards",
+  "server": true,
+  "ui": true,
+  "requiredPlugins": ["navigation", "management", "data", "urlForwarding"],
+  "requiredBundles": ["opensearchDashboardsReact"]
+}

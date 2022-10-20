@@ -276,6 +276,7 @@ export class SearchSource {
     await this.requestIsStarting(options);
 
     const searchRequest = await this.flatten();
+    console.log("searchRequest is", searchRequest);
     this.history = [searchRequest];
 
     let response;
@@ -284,15 +285,17 @@ export class SearchSource {
     } else {
       const indexPattern = this.getField('index');
       searchRequest.dataSourceId = indexPattern?.dataSourceRef?.id;
-
+      // console.log("This is searchRequest",searchRequest);
+      // console.log("These are the options", options)
       response = await this.fetchSearch(searchRequest, options);
     }
 
     // TODO: Remove casting when https://github.com/elastic/elasticsearch-js/issues/1287 is resolved
     if ((response as any).error) {
+      console.log("This the request failier", response);
       throw new RequestFailure(null, response);
     }
-
+    console.log("This is the response without error",response);
     return response;
   }
 
@@ -334,10 +337,13 @@ export class SearchSource {
   private fetchSearch(searchRequest: SearchRequest, options: ISearchOptions) {
     const { search, getConfig, onResponse } = this.dependencies;
 
+    console.log("This.dependencies: ",this.dependencies);
     const params = getSearchParamsFromRequest(searchRequest, {
       getConfig,
     });
-
+    console.log("parsed params are: ",params);
+    console.log("indexType:",searchRequest.indexType);
+    console.log("dataSourceID", searchRequest.dataSourceId);
     return search(
       { params, indexType: searchRequest.indexType, dataSourceId: searchRequest.dataSourceId },
       options
