@@ -2505,6 +2505,11 @@
   dependencies:
     "@octokit/openapi-types" "^11.2.0"
 
+"@opensearch-dashboards-test/opensearch-dashboards-test-library@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@opensearch-dashboards-test/opensearch-dashboards-test-library/-/opensearch-dashboards-test-library-1.0.3.tgz#41f4f48776a4a16e2a2956070a51a706e47bfde1"
+  integrity sha512-fHYyj7TEeuc+AXiIlYduahwRnzH8ddz9hnJiLc8429A4mVKg+pdrlxFkup3lvH+5U6JgVxTpbO8J/XKAt6U7/A==
+
 "@opensearch-project/opensearch@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@opensearch-project/opensearch/-/opensearch-1.1.0.tgz#8b3c8b4cbcea01755ba092d2997bf0b4ca7f22f7"

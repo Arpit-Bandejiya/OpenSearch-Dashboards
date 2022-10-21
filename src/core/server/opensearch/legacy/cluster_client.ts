@@ -73,7 +73,6 @@ const callAPI = async (
 ) => {
   const clientPath = endpoint.split('.');
   const api: any = get(client, clientPath);
-  console.log("This is the low level client call", clientPath, get(client, clientPath));
   if (!api) {
     throw new Error(`called with an invalid endpoint: ${endpoint}`);
   }

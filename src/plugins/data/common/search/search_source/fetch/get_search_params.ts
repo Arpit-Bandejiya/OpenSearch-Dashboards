@@ -60,13 +60,10 @@ export function getSearchParamsFromRequest(
   const searchParams = getSearchParams(getConfig);
 
   if (searchRequest.body.pit) {
-    console.log("pit is present");
     delete searchParams.preference;
     return {
       body: searchRequest.body, ...searchParams,
     };
-  } else {
-    console.log("PIT is not present here");
   }
   return {
     index: searchRequest.index.title || searchRequest.index,
