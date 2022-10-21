@@ -63,13 +63,14 @@ export const opensearchSearchStrategyProvider = (
 
       // ignoreThrottled is not supported in OSS
       const { ignoreThrottled, ...defaultParams } = await getDefaultSearchParams(uiSettingsClient);
-
       const params = toSnakeCase({
         ...defaultParams,
         ...getShardTimeout(config),
         ...request.params,
       });
-
+      if (params.body.pit) {
+        delete params.ignore_unavailable;
+      }
       try {
         const client = await decideClient(context, request);
         const promise = shimAbortSignal(client.search(params), options?.abortSignal);

@@ -59,6 +59,12 @@ export function getSearchParamsFromRequest(
   const { getConfig } = dependencies;
   const searchParams = getSearchParams(getConfig);
 
+  if (searchRequest.body.pit) {
+    delete searchParams.preference;
+    return {
+      body: searchRequest.body, ...searchParams,
+    };
+  }
   return {
     index: searchRequest.index.title || searchRequest.index,
     body: searchRequest.body,

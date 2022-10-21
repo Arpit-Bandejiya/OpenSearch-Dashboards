@@ -46,6 +46,9 @@ import { getDetails } from './lib/get_details';
 import { getDefaultFieldFilter, setFieldFilterProp } from './lib/field_filter';
 import { getIndexPatternFieldList } from './lib/get_index_pattern_field_list';
 import { getServices } from '../../../opensearch_dashboards_services';
+import {
+  PointInTime
+} from "../../../../../../../plugins/my_plugin_name/components/point_in_time_flyout/point_in_time_flyout";
 
 export interface DiscoverSidebarProps {
   /**
@@ -64,6 +67,7 @@ export interface DiscoverSidebarProps {
    * List of available index patterns
    */
   indexPatternList: Array<SavedObject<IndexPatternAttributes>>;
+  pointInTimeList: Array<SavedObject<PointInTime>>;
   /**
    * Callback function when selecting a field
    */
@@ -85,6 +89,8 @@ export interface DiscoverSidebarProps {
    * Callback function to select another index pattern
    */
   setIndexPattern: (id: string) => void;
+  selectedPointInTime: any;
+  setPointInTime: (id: string) => void;
 }
 
 export function DiscoverSidebar({
@@ -92,11 +98,14 @@ export function DiscoverSidebar({
   fieldCounts,
   hits,
   indexPatternList,
+  pointInTimeList,
   onAddField,
   onAddFilter,
   onRemoveField,
   selectedIndexPattern,
   setIndexPattern,
+  setPointInTime,
+  selectedPointInTime,
 }: DiscoverSidebarProps) {
   const [showFields, setShowFields] = useState(false);
   const [fields, setFields] = useState<IndexPatternField[] | null>(null);
@@ -117,7 +126,9 @@ export function DiscoverSidebar({
   );
 
   const getDetailsByField = useCallback(
-    (ipField: IndexPatternField) => getDetails(ipField, hits, columns, selectedIndexPattern),
+    (ipField: IndexPatternField) => {
+      return getDetails(ipField, hits, columns, selectedIndexPattern);
+    },
     [hits, columns, selectedIndexPattern]
   );
 
@@ -164,6 +175,9 @@ export function DiscoverSidebar({
           selectedIndexPattern={selectedIndexPattern}
           setIndexPattern={setIndexPattern}
           indexPatternList={sortBy(indexPatternList, (o) => o.attributes.title)}
+          pointInTimeList={pointInTimeList}
+          setPointInTime={setPointInTime}
+          selectedPointInTime={selectedPointInTime}
         />
         <div className="dscSidebar__item">
           <form>

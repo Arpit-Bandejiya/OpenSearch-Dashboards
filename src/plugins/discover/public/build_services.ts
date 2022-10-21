@@ -38,6 +38,7 @@ import {
   ToastsStart,
   IUiSettingsClient,
   PluginInitializerContext,
+  SavedObjectsClientContract,
 } from 'opensearch-dashboards/public';
 import {
   FilterManager,
@@ -82,6 +83,7 @@ export interface DiscoverServices {
   getEmbeddableInjector: any;
   uiSettings: IUiSettingsClient;
   visualizations: VisualizationsStart;
+  savedObjectsClient: SavedObjectsClientContract;
 }
 
 export async function buildServices(
@@ -125,5 +127,6 @@ export async function buildServices(
     toastNotifications: core.notifications.toasts,
     uiSettings: core.uiSettings,
     visualizations: plugins.visualizations,
+    savedObjectsClient: core.savedObjects.client,
   };
 }

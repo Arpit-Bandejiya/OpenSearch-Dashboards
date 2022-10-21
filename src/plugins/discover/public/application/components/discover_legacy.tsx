@@ -81,6 +81,7 @@ export interface DiscoverLegacyProps {
     savedSearch: SavedSearch;
     config: IUiSettingsClient;
     indexPatternList: Array<SavedObject<IndexPatternAttributes>>;
+    pointInTimeList: any;
     timefield: string;
     sampleSize: number;
     fixedScroll: (el: HTMLElement) => void;
@@ -99,6 +100,8 @@ export interface DiscoverLegacyProps {
   updateQuery: (payload: { dateRange: TimeRange; query?: Query }, isUpdate?: boolean) => void;
   updateSavedQueryId: (savedQueryId?: string) => void;
   vis?: Vis;
+  selectedPointInTime: any;
+  setPointInTime: (id: string) => void;
 }
 
 export function DiscoverLegacy({
@@ -130,16 +133,24 @@ export function DiscoverLegacy({
   updateQuery,
   updateSavedQueryId,
   vis,
+  selectedPointInTime,
+  setPointInTime,
 }: DiscoverLegacyProps) {
   const [isSidebarClosed, setIsSidebarClosed] = useState(false);
   const { TopNavMenu } = getServices().navigation.ui;
-  const { savedSearch, indexPatternList } = opts;
+  const { savedSearch, indexPatternList, pointInTimeList } = opts;
   const bucketAggConfig = vis?.data?.aggs?.aggs[1];
   const bucketInterval =
     bucketAggConfig && search.aggs.isDateHistogramBucketAggConfig(bucketAggConfig)
       ? bucketAggConfig.buckets?.getInterval()
       : undefined;
   const [fixedScrollEl, setFixedScrollEl] = useState<HTMLElement | undefined>();
+  // The selected Point in time here is the id of the saved object, We will be passing the complete object later
+  if (selectedPointInTime != null) {
+    selectedPointInTime = pointInTimeList.find(
+      (pattern: { id: any }) => pattern.id === selectedPointInTime
+    );
+  }
 
   useEffect(() => (fixedScrollEl ? opts.fixedScroll(fixedScrollEl) : undefined), [
     fixedScrollEl,
@@ -195,11 +206,14 @@ export function DiscoverLegacy({
                     fieldCounts={fieldCounts}
                     hits={rows}
                     indexPatternList={indexPatternList}
+                    pointInTimeList={pointInTimeList}
                     onAddField={addColumn}
                     onAddFilter={onAddFilter}
                     onRemoveField={onRemoveColumn}
                     selectedIndexPattern={searchSource && searchSource.getField('index')}
                     setIndexPattern={setIndexPattern}
+                    selectedPointInTime={selectedPointInTime} // currently search source do not support pit hence passing it in props
+                    setPointInTime={setPointInTime}
                   />
                 </div>
               )}

@@ -2505,6 +2505,11 @@
   dependencies:
     "@octokit/openapi-types" "^11.2.0"
 
+"@opensearch-dashboards-test/opensearch-dashboards-test-library@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@opensearch-dashboards-test/opensearch-dashboards-test-library/-/opensearch-dashboards-test-library-1.0.3.tgz#41f4f48776a4a16e2a2956070a51a706e47bfde1"
+  integrity sha512-fHYyj7TEeuc+AXiIlYduahwRnzH8ddz9hnJiLc8429A4mVKg+pdrlxFkup3lvH+5U6JgVxTpbO8J/XKAt6U7/A==
+
 "@opensearch-project/opensearch@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@opensearch-project/opensearch/-/opensearch-1.1.0.tgz#8b3c8b4cbcea01755ba092d2997bf0b4ca7f22f7"
@@ -5580,6 +5585,11 @@ caniuse-lite@^1.0.30001317:
   version "1.0.30001397"
   resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001397.tgz"
   integrity sha512-SW9N2TbCdLf0eiNDRrrQXx2sOkaakNZbCjgNpPyMJJbiOrU5QzMIrXOVMRM1myBXTD5iTkdrtU/EguCrBocHlA==
+
+caniuse-lite@^1.0.30001397:
+  version "1.0.30001399"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001399.tgz#1bf994ca375d7f33f8d01ce03b7d5139e8587873"
+  integrity sha512-4vQ90tMKS+FkvuVWS5/QY1+d805ODxZiKFzsU8o/RsVJz49ZSRR8EjykLJbqhzdPgadbX6wB538wOzle3JniRA==
 
 caseless@~0.12.0:
   version "0.12.0"
@@ -19278,6 +19288,11 @@ yargs@~16.0.3:
     string-width "^4.2.0"
     y18n "^5.0.1"
     yargs-parser "^20.0.0"
+
+yarn@^1.22.19:
+  version "1.22.19"
+  resolved "https://registry.yarnpkg.com/yarn/-/yarn-1.22.19.tgz#4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"
+  integrity sha512-/0V5q0WbslqnwP91tirOvldvYISzaqhClxzyUKXYxs07yUILIs5jx/k6CFe8bvKSkds5w+eiOqta39Wk3WxdcQ==
 
 yauzl@^2.10.0:
   version "2.10.0"
