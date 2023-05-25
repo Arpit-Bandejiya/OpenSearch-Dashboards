@@ -104,6 +104,31 @@ const fetchStatuses = {
 const app = getAngularModule();
 
 export async function getpits(savedObjectsClient) {
+
+  const dspit = await savedObjectsClient
+      .find({
+        type: 'data-source',
+        perPage: 10000,
+      })
+      .then((response) =>
+        response.savedObjects
+          .map((pattern) => {
+            
+            
+            return {
+              ...pattern,
+            };
+          })
+          .sort((a, b) => {
+            if (a.sort < b.sort) {
+              return -1;
+            } else if (a.sort > b.sort) {
+              return 1;
+            } else {
+              return 0;
+            }
+          })
+      ) || [];
   return (
     savedObjectsClient
       .find({
@@ -113,6 +138,14 @@ export async function getpits(savedObjectsClient) {
       .then((response) =>
         response.savedObjects
           .map((pattern) => {
+            if(pattern.attributes.dataSource && pattern.attributes.dataSource != "") {
+              const dsid = dspit.find(x => pattern.attributes.dataSource == x.id)
+              const name = dsid && dsid.attributes && dsid.attributes.title
+              if(name) {
+                pattern.attributes.name = name + "." +pattern.attributes.name 
+                pattern.attributes.title = name + "." +pattern.attributes.title 
+              }
+            }
             return {
               ...pattern,
             };

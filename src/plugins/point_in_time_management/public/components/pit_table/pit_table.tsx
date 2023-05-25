@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { History } from 'history';
 import { useEffectOnce, useMount } from 'react-use';
 import {
   EuiButton,
@@ -25,6 +26,12 @@ import {
   EuiConfirmModal,
   EuiFormRow,
   EuiFieldText,
+  EuiFieldNumber,
+  EuiModal,
+  EuiModalFooter,
+  EuiModalHeader,
+  EuiModalHeaderTitle,
+  EuiModalBody,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
@@ -33,10 +40,19 @@ import { SavedObjectReference } from 'src/core/public';
 import { getListBreadcrumbs } from '../breadcrumbs';
 import { PointInTimeManagementContext } from '../../types';
 import { useOpenSearchDashboards } from '../../../../opensearch_dashboards_react/public';
-import { getDataSources, PointInTime, createSavedObject, getSavedPits } from '../utils';
+import {
+  getDataSources,
+  PointInTime,
+  createSavedObject,
+  getSavedPits,
+  deletePointInTimeById,
+  updatePointInTimeSavedObject,
+  getPitSavedPitsByDataSource,
+} from '../utils';
 import { EmptyState, NoDataSourceState } from './empty_state';
 // import { PageHeader } from './page_header';
 import { getServices, Services } from '../../services';
+import { CreateButton } from '../create_button';
 // import { dataSource } from 'src/plugins/data_source/server/saved_objects';
 
 export interface DataSourceItem {
@@ -51,6 +67,7 @@ export interface DashboardPitItem {
   name: string;
   creation_time: number;
   keep_alive: number;
+  delete_on_expiry: boolean;
 }
 
 export interface PitItem {
@@ -62,7 +79,7 @@ export interface PitItem {
   expiry: number;
 }
 
-const PITTable = ({ history }: RouteComponentProps) => {
+const PITTable = (props: RouteComponentProps) => {
   const {
     setBreadcrumbs,
     savedObjects,
@@ -70,9 +87,14 @@ const PITTable = ({ history }: RouteComponentProps) => {
     http,
   } = useOpenSearchDashboards<PointInTimeManagementContext>().services;
 
+  const history: History = props.history;
+  const dataSourceProp = props.location && props.location.state;
+
   useMount(() => {
     setBreadcrumbs(getListBreadcrumbs());
   });
+
+  const createButton = <CreateButton history={history} dataTestSubj="createPitButton" />;
 
   const services: Services = getServices(http);
 
@@ -83,13 +105,15 @@ const PITTable = ({ history }: RouteComponentProps) => {
   const [loading, setLoading] = useState(false);
   const [pits, setPits] = useState<PitItem[]>([]);
   const [pitsToDelete, setPitsToDelete] = useState<PitItem[]>([]);
+  const [pitToAddTime, setPitToAddTime] = useState<PitItem[]>([]);
   const [selectedPits, setSelectedPits] = useState<PitItem[]>([]);
   // const [dashboardPits, setDashboardPits] = useState<DashboardPitItem[]>([]);
-  const [message, setMessage] = useState(<EmptyState />);
+  const [message, setMessage] = useState(<EmptyState history={history} />);
 
   const [dataSources, setDataSources] = useState<DataSourceItem[]>([defaultDataSource]);
   const [dataSource, setDataSource] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isAddTimeModalVisible, setIsAddTimeModalVisible] = useState(false);
 
   useEffectOnce(() => {
     fetchDataSources();
@@ -108,6 +132,11 @@ const PITTable = ({ history }: RouteComponentProps) => {
               .concat([defaultDataSource])
               .sort((a, b) => a.sort.localeCompare(b.sort))
           );
+          console.log('dataSourceprop', dataSourceProp);
+          const ds = dataSourceProp
+            ? fetchedDataSources.filter((x) => x.id === dataSourceProp)[0].title
+            : '';
+          setDataSource(ds);
         }
       })
       .catch(() => {
@@ -120,8 +149,19 @@ const PITTable = ({ history }: RouteComponentProps) => {
   };
 
   const navigateEdit = (pit) => {
-    console.log(pit);
-    history.push(`${pit.id}`);
+    console.log('editing', pit);
+    const id = pit.id ? pit.id : 'edit';
+    let dataSourceId;
+    if (pit.dataSource === '') {
+      dataSourceId = undefined;
+    } else {
+      const dataSource = dataSources.filter((x) => x.title === pit.dataSource);
+      dataSourceId = dataSource[0].id;
+    }
+
+    pit.dataSourceId = dataSourceId;
+
+    history.push(`${id}`, pit);
   };
 
   const getPits = (dataSourceId?: string) => {
@@ -158,33 +198,59 @@ const PITTable = ({ history }: RouteComponentProps) => {
     services
       .getAllPits(dataSourceId)
       .then((fetchedPits) => {
-        getSavedPits(savedObjects.client)
+        getPitSavedPitsByDataSource(savedObjects.client, dataSourceId ? dataSourceId : '')
           .then((fetchedDashboardPits) => {
             // if (fetchedDataSources?.length) {
             //   setDashboardPits(fetchedDataSources);
             // }
-
+            console.log('dashboard pits', fetchedDashboardPits);
             setLoading(false);
             if (fetchedPits?.resp?.pits) {
-              let expiredPits: DashboardPitItem[] = [];
+              const expiredPits: DashboardPitItem[] = [];
+              // if (dataSourceId === undefined) {
+              //   expiredPits = fetchedDashboardPits.filter(
+              //     (x) => !fetchedPits?.resp?.pits.some((x2) => x.attributes.id === x2.pit_id)
+              //   );
+              // }
+              // console.log('expired', expiredPits);
+              // expiredPits.filter(x=>x.attributes.delete_on_expiry).forEach(x=> {
+              //   console.log('deleting ', x)
+              //   deletePointInTimeById(savedObjects.client, x.id);
+              // })
+
               if (dataSourceId === undefined) {
-                expiredPits = fetchedDashboardPits.filter(
-                  (x) => !fetchedPits?.resp?.pits.some((x2) => x.attributes.id === x2.pit_id)
-                );
+                fetchedDashboardPits.forEach((x) => {
+                  if (!fetchedPits?.resp?.pits.some((x2) => x.attributes.pit_id === x2.pit_id)) {
+                    if (x.attributes.delete_on_expiry) {
+                      console.log('deleting ', x);
+                      deletePointInTimeById(savedObjects.client, x.id);
+                    } else {
+                      expiredPits.push(x);
+                    }
+                  }
+                });
               }
               console.log('expired', expiredPits);
+
               setPits(
                 fetchedPits?.resp?.pits
                   .map((val) => {
                     const date = moment(val.creation_time);
-                    let formattedDate = date.format('MMM D @ HH:mm:ss');
+                    const formattedDate = date.format('MMM D @ HH:mm:ss');
                     const expiry = val.creation_time + val.keep_alive;
                     const dashboardPit = fetchedDashboardPits.filter(
                       (x) => x.attributes.pit_id === val.pit_id
                     );
-                    let isSavedObject = false;
                     if (dashboardPit.length > 0) {
-                      isSavedObject = true;
+                      console.log(dashboardPit);
+                      dashboardPit[0].attributes.keepAlive = val.keep_alive;
+                      console.log('updating', dashboardPit);
+                      updatePointInTimeSavedObject(
+                        savedObjects.client,
+                        dashboardPit[0].id,
+                        dashboardPit[0].attributes,
+                        dashboardPit[0].references
+                      );
                       return {
                         pit_id: val.pit_id,
                         id: dashboardPit[0].id,
@@ -192,7 +258,7 @@ const PITTable = ({ history }: RouteComponentProps) => {
                         creation_time: val.creation_time,
                         keep_alive: val.keep_alive,
                         dataSource: dataSourceName,
-                        isSavedObject,
+                        isSavedObject: true,
                         expiry,
                       };
                     }
@@ -203,7 +269,7 @@ const PITTable = ({ history }: RouteComponentProps) => {
                       creation_time: val.creation_time,
                       keep_alive: val.keep_alive,
                       dataSource: dataSourceName,
-                      isSavedObject,
+                      isSavedObject: false,
                       expiry,
                     };
                   })
@@ -247,10 +313,10 @@ const PITTable = ({ history }: RouteComponentProps) => {
     // setIsFlyoutVisible(false);
     const pit: PointInTime = {
       pit_id:
-        'o463QQIHdGVzdC0wMRZCdWwwcGhJQVRoV2Y5TGZDSml2bGN3ARZYaFV0cmRlTlQyR2VJbldGbURJdnl3AAAAAAAAAABPFlBEcUZPNk9XVFNxSlNyVVhoTVdBNmcHdGVzdC0wMRZCdWwwcGhJQVRoV2Y5TGZDSml2bGN3ABZYaFV0cmRlTlQyR2VJbldGbURJdnl3AAAAAAAAAABOFlBEcUZPNk9XVFNxSlNyVVhoTVdBNmcBFkJ1bDBwaElBVGhXZjlMZkNKaXZsY3cAAA==',
-      keepAlive: 300000,
-      creation_time: 1681386155468,
-      name: 'PIT-my-index-2-3-new', // Todo create pit and fill the pit id
+        'o463QQEKbXktaW5kZXgtMRZqUlZFU2lSaFE1eUx0cHdiSjNLWjRRABZtWjNCdk1ZdFRZbS1JbnltaVlBTWdBAAAAAAAAAACGFlJXLVVNYXVQVFctQVIxVmh1OUJuSlEBFmpSVkVTaVJoUTV5THRwd2JKM0taNFEAAA==',
+      keepAlive: 30000000,
+      creation_time: 1684418768188,
+      name: 'PIT-my-index-1223', // Todo create pit and fill the pit id
       delete_on_expiry: false,
     };
 
@@ -289,7 +355,13 @@ const PITTable = ({ history }: RouteComponentProps) => {
     }
     services.deletePits([pit.pit_id], dataSourceId).then((deletedPits) => {
       console.log(deletedPits);
-      getPits(dataSource);
+      if (pit.isSavedObject) {
+        deletePointInTimeById(savedObjects.client, pit.id).then(() => {
+          getPits(dataSource);
+        });
+      } else {
+        getPits(dataSource);
+      }
     });
   };
 
@@ -357,9 +429,120 @@ const PITTable = ({ history }: RouteComponentProps) => {
     return <div>{modal}</div>;
   };
 
+  const AddTimeModal = ({}) => {
+    const closeModal = () => {
+      setIsAddTimeModalVisible(false);
+    };
+
+    const [addTimeHr, setAddTimeHr] = useState(0);
+    const [addTimeMin, setAddTimeMin] = useState(0);
+    const [addTime, setAddTime] = useState(0);
+
+    const onChangeTimeHr = (e) => {
+      setAddTimeHr(parseInt(e.target.value));
+      setAddTime(60 * parseInt(e.target.value) + addTimeMin);
+    };
+
+    const onChangeTimeMin = (e) => {
+      setAddTimeMin(parseInt(e.target.value));
+      setAddTime(60 * addTimeHr + parseInt(e.target.value));
+    };
+
+    const addTimeToPit = (pit) => {
+      console.log(addTime);
+      console.log('add time pit', pit);
+      const new_keep_alive_proposal = addTime.toString() + 'm';
+      const ds =
+        pit.dataSource == ''
+          ? undefined
+          : dataSources.filter((x) => x.title === pit.dataSource)[0].id;
+      services
+        .addPitTime(pit.pit_id, new_keep_alive_proposal, ds)
+        .then(() => getPits(pit.dataSource))
+        .catch(() => {
+          toasts.addDanger(
+            i18n.translate('pitManagement.pitTable.addTimeError', {
+              defaultMessage: 'Error while updating PIT object.',
+            })
+          );
+        });
+    };
+
+    let modal;
+
+    if (isAddTimeModalVisible) {
+      const maxTime = moment(pitToAddTime[0].expiry).diff(
+        moment(pitToAddTime[0].creation_time),
+        'hours'
+      );
+      console.log('maxTime', maxTime);
+      const maxTimeExceeded = maxTime >= 24;
+      if (maxTimeExceeded) {
+        modal = (
+          <EuiModal title="Maximum time reached" onClose={closeModal}>
+            <EuiModalHeader>
+              <EuiModalHeaderTitle>Maximum time reached</EuiModalHeaderTitle>
+            </EuiModalHeader>
+            <EuiModalBody>
+              <EuiText>
+                A PIT can be kept for a maximum of 24 hours. You cannot add more time to this PIT.
+                To extend the time, configure point_in_time.max_keep_alive or contact your
+                administrator.
+              </EuiText>
+              <EuiSpacer />
+            </EuiModalBody>
+            <EuiModalFooter>
+              <EuiButton onClick={closeModal} fill>
+                Cancel
+              </EuiButton>
+            </EuiModalFooter>
+          </EuiModal>
+        );
+      } else {
+        modal = (
+          <EuiConfirmModal
+            title="Add Time"
+            onCancel={closeModal}
+            onConfirm={() => {
+              closeModal();
+              addTimeToPit(pitToAddTime[0]);
+              setPitToAddTime([]);
+            }}
+            confirmButtonText="Add time to PIT"
+            cancelButtonText="Cancel"
+          >
+            <EuiText>
+              Add an amount of time to a PIT. This amount must be greater than the keep_alive time
+              (x) and cannot exceed the max_keep_alive time (y). You can configure keep_alive on the
+              PIT object details page.
+            </EuiText>
+            <EuiSpacer />
+            <EuiFormRow>
+              <EuiFlexGroup>
+                <EuiFlexItem>
+                  <EuiFieldNumber placeholder="Hour(s)" onChange={onChangeTimeHr} />
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiFieldNumber placeholder="Min(s)" onChange={onChangeTimeMin} />
+                </EuiFlexItem>
+              </EuiFlexGroup>
+            </EuiFormRow>
+          </EuiConfirmModal>
+        );
+      }
+    }
+
+    return <div>{modal}</div>;
+  };
+
   const displayDelete = (pit) => {
     setPitsToDelete([pit]);
     setIsModalVisible(true);
+  };
+
+  const displayAddTime = (pit) => {
+    setPitToAddTime([pit]);
+    setIsAddTimeModalVisible(true);
   };
 
   const actions = [
@@ -368,7 +551,7 @@ const PITTable = ({ history }: RouteComponentProps) => {
       description: 'Add Time',
       icon: 'clock',
       type: 'icon',
-      onClick: fetchDataSources,
+      onClick: displayAddTime,
     },
     {
       name: 'Configure PIT',
@@ -494,6 +677,12 @@ const PITTable = ({ history }: RouteComponentProps) => {
         console.log(deletedPits);
         getPits(dataSource);
       });
+
+    selectedPits.forEach((x) => {
+      if (x.isSavedObject) {
+        deletePointInTimeById(savedObjects.client, x.id);
+      }
+    });
   };
 
   const renderToolsRight = () => {
@@ -623,14 +812,7 @@ const PITTable = ({ history }: RouteComponentProps) => {
                 />
               </EuiButton>
             </EuiFlexItem>
-            <EuiFlexItem grow={false}>
-              <EuiButton fill={true} iconType="plusInCircle" data-test-subj="createPITBtnInHeader">
-                <FormattedMessage
-                  id="pitManagement.header.createPitButton"
-                  defaultMessage="Create PIT"
-                />
-              </EuiButton>
-            </EuiFlexItem>
+            <EuiFlexItem grow={false}>{createButton}</EuiFlexItem>
           </EuiFlexGroup>
         </EuiPageContentHeader>
         <EuiText size="s">
@@ -670,10 +852,11 @@ const PITTable = ({ history }: RouteComponentProps) => {
             selection={selection}
           />
           <DeleteModal />
+          <AddTimeModal />
         </EuiPageContentBody>
       </EuiPageContent>
-      <EuiButton onClick={createPointInTime}>Create PIT</EuiButton>
-      <EuiButton onClick={getBackendPits}>Get PITs</EuiButton>
+      {/* <EuiButton onClick={createPointInTime}>Create PIT</EuiButton>
+      <EuiButton onClick={getBackendPits}>Get PITs</EuiButton> */}
     </>
   );
 };

@@ -19,6 +19,7 @@ import {
   EuiPageHeader,
   EuiPageHeaderSection,
   EuiSpacer,
+  EuiSwitch,
   EuiTitle,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
@@ -44,6 +45,9 @@ export interface EditPitState {
   AddTimeHr: any;
   AddTimeMin: any;
   addTime: any;
+  isSavedObject: any;
+  makedashboardschecked: boolean;
+  creation_time?: number;
 }
 
 export class EditPitForm extends React.Component<EditPitProps, EditPitState> {
@@ -61,13 +65,16 @@ export class EditPitForm extends React.Component<EditPitProps, EditPitState> {
       AddTimeHr: 0,
       AddTimeMin: 0,
       addTime: 0,
+      isSavedObject: true,
+      makedashboardschecked: false,
+      creation_time: 0,
     };
   }
 
   componentDidMount() {
     this.setFormValuesForEditMode();
     console.log('These are the props in mount');
-    console.log(this.props);
+    console.log('here', this.props);
   }
 
   resetFormValues = () => {
@@ -77,13 +84,23 @@ export class EditPitForm extends React.Component<EditPitProps, EditPitState> {
 
   setFormValuesForEditMode() {
     if (this.props.existingPointInTime) {
-      const { keepAlive, name, pit_id, id, addtime } = this.props.existingPointInTime;
+      const {
+        creation_time,
+        keepAlive,
+        name,
+        pit_id,
+        id,
+        addtime,
+        isSavedObject,
+      } = this.props.existingPointInTime;
       this.setState({
-        keepAlive: keepAlive,
-        name: name,
-        pit_id: pit_id,
-        id: id,
-        addtime: addtime,
+        keepAlive,
+        name,
+        pit_id,
+        id,
+        addTime: addtime,
+        isSavedObject,
+        creation_time,
       });
     }
   }
@@ -103,19 +120,21 @@ export class EditPitForm extends React.Component<EditPitProps, EditPitState> {
 
   onClickUpdatePit = async () => {
     if (this.isFormValid()) {
+      console.log(this.state, 'State');
       const formValues: PointInTimeAttributes = {
         name: this.state.name,
         keepAlive: this.state.keepAlive,
-        creation_time: this.state.keepAlive,
+        creation_time: this.state.creation_time,
         id: this.state.id,
         pit_id: this.state.pit_id,
         addtime: this.state.addTime,
         delete_on_expiry: this.state.checked,
+        isSavedObject: this.state.isSavedObject,
       };
       this.setState({ isLoading: true });
 
       try {
-        console.log("OnClickUpdate", formValues);
+        console.log('OnClickUpdate', formValues);
         await this.props.handleSubmit(formValues);
         this.setState({ showUpdateOptions: false });
         this.setFormValuesForEditMode();
@@ -161,8 +180,6 @@ export class EditPitForm extends React.Component<EditPitProps, EditPitState> {
       this.didFormValuesChange();
     }, 0);
   };
-
-
 
   onChangeTimeHr = (e: { target: { value: any } }) => {
     this.setState({
@@ -231,6 +248,112 @@ export class EditPitForm extends React.Component<EditPitProps, EditPitState> {
     );
   };
 
+  configurationForm = (isSavedObject: boolean) => {
+    return isSavedObject ? (
+      <EuiForm
+        component="form"
+        onChange={() => this.onChangeFormValues()}
+        data-test-subj="pit-edit-2"
+      >
+        <EuiDescribedFormGroup
+          title={<h3>PIT name</h3>}
+          description={<p>Choose a name for a PIT that is available in OpenSearch Dashboards.</p>}
+        >
+          <EuiFormRow
+            label="PIT name"
+            helpText="Specify a unique and descriptive name that is easy to recognize."
+          >
+            <EuiFieldText name="pit-name" value={this.props.existingPointInTime.name} onChange={this.onChangePitName} />
+          </EuiFormRow>
+        </EuiDescribedFormGroup>
+        <EuiDescribedFormGroup
+          title={<h3>Post-expiration actions</h3>}
+          description={
+            <p>
+              PIT data is lost once it expires you have the option to keep the PIT metadata after
+              after expiration. expiration. expiration. expiration. expiration. You can also choose
+              to keep the Dashboard Object expiration. This object will be converted to an Index
+              Pattern and Pattern and it will reference data.
+            </p>
+          }
+        >
+          <EuiFormRow>
+            <>
+              <EuiCheckbox
+                id="pit-id"
+                label="Delete dependent saved objects at PIT expiration"
+                checked={this.state.checked}
+                onChange={this.onChangeDeleteObject}
+              />
+            </>
+          </EuiFormRow>
+        </EuiDescribedFormGroup>
+      </EuiForm>
+    ) : (
+      <EuiForm
+        component="form"
+        onChange={() => this.onChangeFormValues()}
+        data-test-subj="pit-edit-2"
+      >
+        <EuiDescribedFormGroup
+          title={<h3>Dashboard availability</h3>}
+          description={
+            <p>To use this PIT in OpenSearch Dashboards, make it available to Dashboards.</p>
+          }
+        >
+          <EuiFormRow>
+            <EuiSwitch
+              label="Make available in dashboards"
+              checked={this.state.makedashboardschecked}
+              onChange={(e) =>
+                this.setState({ ...this.state, makedashboardschecked: e.target.checked })
+              }
+            />
+          </EuiFormRow>
+
+          {this.state.makedashboardschecked && (
+            <EuiFlexGroup style={{ maxWidth: 800 }}>
+              <EuiFlexItem>
+                <EuiFormRow hasEmptyLabelSpace>
+                  <EuiFieldText disabled value="PIT-" />
+                </EuiFormRow>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiFormRow
+                  label="Point in time name"
+                  helpText="Specify a unique and descriptive name that is easy to recognize."
+                >
+                  <EuiFieldText placeholder="Descriptive name" value={this.state.name} onChange={this.onChangePitName} />
+                </EuiFormRow>
+              </EuiFlexItem>
+            </EuiFlexGroup>
+          )}
+        </EuiDescribedFormGroup>
+        <EuiDescribedFormGroup
+          title={<h3>Post-expiration actions</h3>}
+          description={
+            <p>
+              PIT data is lost once it expires you have the option to keep the PIT metadata after
+              after expiration. expiration. expiration. expiration. expiration. You can also choose
+              to keep the Dashboard Object expiration. This object will be converted to an Index
+              Pattern and Pattern and it will reference data.
+            </p>
+          }
+        >
+          <EuiFormRow>
+            <>
+              <EuiCheckbox
+                id="pit-id"
+                label="Delete dependent saved objects at PIT expiration"
+                checked={this.state.checked}
+                onChange={this.onChangeDeleteObject}
+              />
+            </>
+          </EuiFormRow>
+        </EuiDescribedFormGroup>
+      </EuiForm>
+    );
+  };
   render() {
     return (
       <>
@@ -268,10 +391,10 @@ export class EditPitForm extends React.Component<EditPitProps, EditPitState> {
               <EuiFormRow>
                 <EuiFlexGroup>
                   <EuiFlexItem>
-                    <EuiFieldNumber placeholder="Hour(s)" onChange={this.onChangeTimeHr}/>
+                    <EuiFieldNumber value={this.state.AddTimeHr} min={0} max={23} placeholder="Hour(s)" onChange={this.onChangeTimeHr} />
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiFieldNumber placeholder="Min(s)" onChange={this.onChangeTimeMin}/>
+                    <EuiFieldNumber value={this.state.AddTimeMin} min={0} max={59} placeholder="Min(s)" onChange={this.onChangeTimeMin} />
                   </EuiFlexItem>
                 </EuiFlexGroup>
               </EuiFormRow>
@@ -294,55 +417,11 @@ export class EditPitForm extends React.Component<EditPitProps, EditPitState> {
             </EuiPageHeaderSection>
           </EuiPageHeader>
           <EuiSpacer />
-          <EuiForm
-            component="form"
-            onChange={() => this.onChangeFormValues()}
-            data-test-subj="pit-edit-2"
-          >
-            <EuiDescribedFormGroup
-              title={<h3>PIT name</h3>}
-              description={
-                <p>Choose a name for a PIT that is available in OpenSearch Dashboards.</p>
-              }
-            >
-              <EuiFormRow
-                label="PIT name"
-                helpText="Specify a unique and descriptive name that is easy to recognize."
-              >
-                <EuiFieldText name="pit-name" onChange={this.onChangePitName} />
-              </EuiFormRow>
-            </EuiDescribedFormGroup>
-            <EuiDescribedFormGroup
-              title={<h3>Post-expiration actions</h3>}
-              description={
-                <p>
-                  PIT data is lost once it expires you have the option to keep the PIT metadata
-                  after after expiration. expiration. expiration. expiration. expiration. You can
-                  also choose to keep the Dashboard Object expiration. This object will be converted
-                  to an Index Pattern and Pattern and it will reference data.
-                </p>
-              }
-            >
-              <EuiFormRow>
-                <>
-                  <EuiCheckbox
-                    id="pit-id"
-                    label="Delete this PIT at expiration"
-                    checked={this.state.checked}
-                    onChange={this.onChangeDeleteObject}
-                  />
-                  <EuiCheckbox
-                    id="pit-id"
-                    label="Delete dependent saved objects at PIT expiration"
-                    onChange={(e) => this.onChange(e)}
-                    disabled={true}
-                  />
-                </>
-              </EuiFormRow>
-            </EuiDescribedFormGroup>
-          </EuiForm>
-          {this.state.showUpdateOptions ? this.renderBottomBar() : null}
+          {this.state.isSavedObject
+            ? this.configurationForm(this.state.isSavedObject)
+            : this.configurationForm(this.state.isSavedObject)}
         </EuiPageContent>
+        {this.state.showUpdateOptions ? this.renderBottomBar() : null}
       </>
     );
   }

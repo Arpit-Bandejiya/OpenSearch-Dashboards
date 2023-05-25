@@ -6,27 +6,33 @@
 import { EuiButton, EuiEmptyPrompt } from '@elastic/eui';
 import { FormattedMessage } from '@osd/i18n/react';
 import React from 'react';
+import { History } from 'history';
+import { CreateButton } from '../../create_button';
 
-export const EmptyState = () => (
-  <EuiEmptyPrompt
-    body={
-      <p>
-        <FormattedMessage
-          id="pointInTimeManagement.pointInTimeDescription"
-          defaultMessage="No PIT objects have been created."
-        />
-      </p>
-    }
-    actions={
-      <EuiButton iconType="plusInCircle" data-test-subj="createPITBtnInHeader">
-        <FormattedMessage
-          id="pointInTimeManagement.header.createPointInTimeButton"
-          defaultMessage="Create PIT"
-        />
-      </EuiButton>
-    }
-  />
-);
+interface Props {
+  history: History;
+}
+
+export const EmptyState = ({ history }: Props) => {
+  console.log('history in empty state', history);
+  const createButton = (
+    <CreateButton history={history} isEmptyState={true} dataTestSubj="createPitButton" />
+  );
+
+  return (
+    <EuiEmptyPrompt
+      body={
+        <p>
+          <FormattedMessage
+            id="pointInTimeManagement.pointInTimeDescription"
+            defaultMessage="No PIT objects have been created."
+          />
+        </p>
+      }
+      actions={createButton}
+    />
+  );
+};
 
 export const NoDataSourceState = () => (
   <EuiEmptyPrompt

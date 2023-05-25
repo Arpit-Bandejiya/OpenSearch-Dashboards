@@ -82,7 +82,6 @@ export function registerPitRoutes(router: IRouter) {
       }
     }
   );
-
   router.post(
     {
       path: '/api/pit/delete',
@@ -114,68 +113,50 @@ export function registerPitRoutes(router: IRouter) {
     }
   );
 
-  // router.post(
-  //     {
-  //         path: '/api/geospatial/_search',
-  //         validate: {
-  //             body: schema.object({
-  //                 index: schema.string(),
-  //             }),
-  //         },
-  //     },
-  //     async (context, req, res) => {
-  //         const client = context.core.opensearch.client.asCurrentUser;
-  //         try {
-  //             const { index } = req.body;
-  //             const params = { index, body: {} };
-  //             const results = await client.search(params);
-  //             return res.ok({
-  //                 body: {
-  //                     ok: true,
-  //                     resp: results.body,
-  //                 },
-  //             });
-  //         } catch (err: any) {
-  //             return res.ok({
-  //                 body: {
-  //                     ok: false,
-  //                     resp: err.message,
-  //                 },
-  //             });
-  //         }
-  //     }
-  // );
+  router.post(
+    {
+      path: `/api/pit/create/{index}`,
+      validate: {
+        params: schema.object({
+          index: schema.string(),
+        }),
+        query: schema.object({
+          allowPartialFailures: schema.boolean({ defaultValue: true }),
+          keepAlive: schema.string(),
+        }),
+        body: schema.object({
+          dataSourceId: schema.string(),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      console.log('This is the request for create point in time path');
+      console.log(request);
+      const { index } = request.params;
+      const { keepAlive, allowPartialFailures } = request.query;
+      console.log(index);
+      console.log(context);
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      debugger;
+      const client: OpenSearchClient = await getClient(request, context);
 
-  // router.post(
-  //     {
-  //         path: '/api/geospatial/_mappings',
-  //         validate: {
-  //             body: schema.object({
-  //                 index: schema.string(),
-  //             }),
-  //         },
-  //     },
-  //     async (context, req, res) => {
-  //         const client = context.core.opensearch.client.asCurrentUser;
-  //         try {
-  //             const { index } = req.body;
-  //             const mappings = await client.indices.getMapping({ index });
-  //             return res.ok({
-  //                 body: {
-  //                     ok: true,
-  //                     resp: mappings.body,
-  //                 },
-  //             });
-  //         } catch (err: any) {
-  //             return res.ok({
-  //                 body: {
-  //                     ok: false,
-  //                     resp: err.message,
-  //                 },
-  //             });
-  //         }
-  //     }
-  // );
+      const response_local = await client.createPit(
+        {
+          index,
+          keep_alive: keepAlive,
+          allow_partial_pit_creation: allowPartialFailures,
+        },
+        {}
+      );
+      console.log('This is after posting', response_local);
+      return response.ok({
+        body: {
+          pit_id: response_local.body.pit_id,
+          creation_time: response_local.body.creation_time,
+        },
+      });
+    }
+  );
 }
 
 async function getClient(
@@ -190,4 +171,7 @@ async function getClient(
   return req.body.dataSourceId && req.body.dataSourceId !== 'default' && context.dataSource
     ? await context.dataSource.opensearch.getClient(req.body.dataSourceId)
     : context.core.opensearch.client.asCurrentUser;
+}
+function trimEnd(arg0: string, arg1: string) {
+  throw new Error('Function not implemented.');
 }

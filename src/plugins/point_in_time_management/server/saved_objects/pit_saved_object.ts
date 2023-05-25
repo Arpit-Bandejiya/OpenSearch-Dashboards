@@ -19,16 +19,17 @@ export const pointInTimeSavedObject: SavedObjectsType = {
     // getEditUrl(obj) {
     //   return `/management/opensearch-dashboards/dataSources/${encodeURIComponent(obj.id)}`;
     // },
-    // getInAppUrl(obj) {
-    //   return {
-    //     path: `/app/management/opensearch-dashboards/dataSources/${encodeURIComponent(obj.id)}`,
-    //     uiCapabilitiesPath: 'management.opensearchDashboards.dataSources',
-    //   };
-    // },
+    getInAppUrl(obj) {
+      return {
+        path: `/app/management/opensearch-dashboards/point-in-time/${encodeURIComponent(obj.id)}`,
+        uiCapabilitiesPath: 'management.opensearchDashboards.dataSources',
+      };
+    },
   },
   mappings: {
     dynamic: false,
     properties: {
+      dataSource: { type: 'text' },
       title: { type: 'text' },
       creation_time: { type: 'double' },
       keepAlive: { type: 'integer' },
